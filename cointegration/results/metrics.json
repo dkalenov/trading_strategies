@@ -1,0 +1,29 @@
+{
+  "start_date": "2024-05-23 20:00:00+00:00",
+  "end_date": "2025-10-23 16:00:00+00:00",
+  "n_days": 517.8,
+  "starting_capital": 100000.0,
+  "ending_equity": 87228.40771007295,
+  "total_return_pct": -12.77,
+  "cagr_pct": -9.18,
+  "max_drawdown_pct": -17.39,
+  "cagr_over_mdd": -0.53,
+  "sharpe": -1.36,
+  "n_trades": 1594,
+  "win_rate_pct": 51.76,
+  "avg_trade_pnl": -8.04,
+  "avg_win": 90.22,
+  "avg_loss": -113.46,
+  "profit_factor": 0.85,
+  "avg_holding_days": 2.06,
+  "total_costs": 15954.5,
+  "beta_vs_btc": 0.007,
+  "corr_vs_btc": 0.047,
+  "exit_reasons": {
+    "screen_failed": 758,
+    "target": 457,
+    "stop_divergence": 368,
+    "end_of_backtest": 9,
+    "max_holding": 2
+  }
+}
