@@ -1,221 +1,171 @@
-The goal of this project is to design and implement a **market-neutral long/short hedging strategy** with a **beta coefficient close to 0**.  
-This minimizes exposure to overall market volatility (especially Bitcoin’s dominance in crypto markets) while allowing us to profit from **relative value differences** between correlated assets.
+# Cointegration pairs trading (market-neutral BTC-beta strategy)
 
-This work builds upon my previous GitHub project - [**Cointegrated Pairs Trading Bot**](https://github.com/dkalenov/Cointegrated-Pairs-Trading-bot) - where I developed a Python-based trading bot that identifies and trades cointegrated cryptocurrency pairs using **statistical arbitrage** and **mean-reversion** logic.  
-The current project extends that concept toward **beta-neutral portfolio management**.
+Statistical arbitrage for crypto perpetual futures. Find pairs of coins that are cointegrated, trade the spread when it stretches too far from its historical mean, size the two legs so the combined position has close to zero beta to BTC. Builds on an earlier project of mine, [Cointegrated Pairs Trading Bot](https://github.com/dkalenov/Cointegrated-Pairs-Trading-bot), extended to explicitly target BTC-beta neutrality.
 
----
+This is a prototype, not a finished trading system. The market-neutral part works (0.007 beta to BTC on the backtest). The profitable part doesn't, not with the original parameters and costs tested. See [Results](#results).
 
-**Why Cointegration**
+## What's in this repo
 
-**Cointegration-based approach** allows to identify assets that move together in the long term but diverge temporarily in the short term.  
-These temporary deviations offer **statistically measurable mean-reversion opportunities**.
+- `coint_pairs/` - cointegration test, half-life, z-score, position sizing. Shared by the backtest and the live bot.
+- `backtest/` - event-driven backtest engine and metrics.
+- `bot/` - live/paper trading bot for Binance USDT-M futures, dry-run by default.
+- `scripts/` - CLI to reproduce the backtest.
+- `tests/` - unit tests + a mocked end-to-end test of the bot's trading cycle.
+- `results/` - output of the backtest run below: equity curve, trade log, metrics, parameter sweep.
 
-Unlike correlation, cointegration ensures a **stationary linear relationship** between assets — allowing robust entry/exit decisions based on **z-scores** and **half-life estimates**.  
-This method naturally provides **hedging** since long and short positions offset each other, reducing exposure to overall market movements.
+## Audit: the original prototype didn't work
 
+Started from an earlier prototype that scanned for cointegrated pairs but never simulated a trade. Three bugs found going through it:
 
-## ****Implementation Plan****
+- **No imports.** The worker script didn't import `numpy`, `pandas`, or its own cointegration function. Never actually run.
+- **Silent failure even after fixing that.** The hedge ratio was pulled out of an OLS fit with `.iloc[1]`, which only works on a pandas Series. The script fed it numpy arrays, so every call threw `AttributeError`, caught by a bare `except Exception:`, and returned `hedge = nan`. Zero pairs found, always, no error shown.
+- **Double log transform.** The script passed already log-transformed prices into a function that logs its input again internally (confirmed: the matrix was literally named `logmat`). Would've silently produced a wrong hedge ratio if the bug above hadn't masked it first.
 
+There was also no backtest, just a scanner logging a row whenever a rolling window crossed the z-score threshold. No entry/exit tracking, no PnL, no fees.
 
+Fixed in `coint_pairs/stats.py`, with a regression test in `tests/test_stats.py` covering both bugs.
 
-**1. Data Preparation**
+## How the backtest works
 
-- Load and clean historical **kline (candlestick)** data for top cryptocurrencies.  
-- Ensure all symbols share a unified time index, removing missing or duplicate candles.
+Walks forward bar by bar, no lookahead:
 
----
+- Every 30 bars (5 days, 4h candles), re-screens the universe: Engle-Granger cointegration (p < 0.05), half-life under 200 bars, pair beta vs BTC under 0.1. Hedge ratio fixed at the rescan value until the next one.
+- Every bar, computes a z-score per eligible pair from a trailing 200-bar window.
+- Entry at |z| >= 2, exit at |z| <= 0.5. Sizing splits 5% of capital between the two legs by inverse volatility.
 
-**2. Beta Analysis**
+Added on top, since the original design didn't specify risk management:
 
-- Estimate how strongly each cryptocurrency depends on **Bitcoin (BTC)** using log returns.
+- Hard stop at |z| >= 4, max holding period of 60 bars.
+- Stop-loss at 1% of capital per pair (the design doc names this figure but the sizing formula it specifies doesn't enforce it, so it's implemented as an actual stop instead).
+- Position closes if the pair fails the cointegration screen at a rescan while open.
+- 5bps taker fee + 5bps slippage per fill, both legs, both sides. Funding rate is not modeled (not in the dataset), so real performance would likely run somewhat worse than backtested.
 
+The cointegration test uses a fixed ADF lag for speed (`maxlag=1`), checked against the default `autolag='aic'` on a 400-window sample: 95% agreement.
 
----
+## Universe and data
 
-**3. Cointegration Scanning**
+4h klines, 328 symbols, 2024-05-24 to 2025-10-24, clean (no dupes, no gaps). Universe is the 60 most liquid symbols with full history for the period, 1770 possible pairs.
 
-- Apply the **Engle–Granger two-step test** to detect statistically significant, mean-reverting long-term relationships.  
-- Evaluate all symbol pairs for cointegration.  
-- Retain only pairs that meet strict selection criteria:
+## Results
 
-  - p-value < 0.05  
-  - Half-life < 200 bars  
-  - Pair beta vs BTC ≈ 0  
+$100,000 starting capital, 2024-05-23 to 2025-10-23 (~1.4 years):
 
----
+| Metric | Value |
+|---|---|
+| Total return | -12.77% |
+| CAGR | -9.18% |
+| Max drawdown | -17.39% |
+| Sharpe | -1.36 |
+| Beta vs BTC | 0.007 |
+| Trades | 1,594 |
+| Win rate | 51.76% |
+| Avg holding period | 2.06 days |
+| Total costs paid | $15,954 |
 
-**4. Z-Score and Signal Generation**
+![equity curve](results/equity_curve.png)
 
-Compute the rolling z-score of each pair’s spread:
+Beta of 0.007 to BTC means the market-neutral hedging works, the equity curve barely reacts to BTC's swings over the period. It just doesn't make money after costs: gross PnL before fees/slippage was about +$3,183, small but positive, and $15,954 in costs across 1,594 trades wiped it out.
 
+| Exit reason | Trades | Net PnL |
+|---|---|---|
+| Target (z reverted) | 457 | +$48,406 |
+| Stop divergence | 368 | -$46,769 |
+| Screen failed (pair stopped qualifying) | 758 | -$13,766 |
+| Max holding / end of backtest | 11 | -$686 |
 
-**Define trading signals:**
+758 of 1,594 trades closed because the pair stopped passing the cointegration screen 5 days later, not because of price. A pair testing as "cointegrated" on a 200-bar window holds up for the next 5 days less than half the time in this data, likely a mix of multiple-testing noise (screening ~1770 pairs at p < 0.05) and genuinely shifting correlation structure in crypto.
 
-- **Go Long:**  z ≤ −2  
-- **Go Short:** z ≥ +2  
-- **Exit:** |z| ≤ 0.5  
+### Parameter sensitivity
 
-Entries occur at statistical extremes; exits near equilibrium.
+Tested two things: whether a longer formation window fixes the screen-failed churn, and how sensitive results are to the entry/exit thresholds. Full sweep in `results/parameter_sweep.json`.
 
----
+A 400-bar window (vs. 200) made things worse, not better: -17.25% return, Sharpe -2.2. Window length isn't the cause of the churn above.
 
-**5. Pair-Level Beta Calculation**
+Entry/exit thresholds mattered more:
 
-Identify combinations of assets which joint spread shows minimal dependency on BTC (**target β ≈ 0**).
+| z-entry | z-stop | Trades | Return | Sharpe |
+|---|---|---|---|---|
+| 2.0 (original) | 4.0 | 1,594 | -12.77% | -1.36 |
+| 3.0 | 5.0 | 775 | -0.46% | -0.04 |
+| **4.0** | **5.0** | 348 | **+0.69%** | **0.15** |
+| 4.5 | 6.0 | 194 | +0.04% | 0.02 |
+| 5.0 | 7.0 | 118 | -0.33% | -0.10 |
 
----
+Fewer, higher-conviction entries with a wider stop takes this from clearly losing to roughly flat. This was found by searching parameter combinations against the same period the results are reported on, it's not out-of-sample validated, and the repo's defaults haven't been changed to match it.
 
-**6. Position Sizing and Risk Management**
+## What I'd check next
 
-Apply **volatility parity** to balance exposure between both legs:
+- Out-of-sample validation of the z=4/stop=5 region, on data not used to find it.
+- Funding rate, not modeled at all here.
+- Slippage assumptions (5bps) are a guess, not measured from order book depth.
+- What's actually driving the screen-failed churn, since window length wasn't it.
 
+## Running it
 
+```bash
+git clone <this repo>
+cd cointegration-pairs-bot
+python -m venv .venv && source .venv/bin/activate  # .venv\Scripts\activate on Windows
+pip install -r requirements.txt
+```
 
-**Limit exposure:**
+### Reproduce the backtest
 
-- Max notional per pair = **5% of total capital**  
-- Max risk per pair = **1% of total capital**  
-- Maintain **portfolio beta near zero** relative to BTC.
+Needs a klines CSV with columns `Date,Open,High,Low,Close,Volume,Symbol`. The full scan is slow (~10-15 min on one core for 60 symbols), so it's split into a checkpointed precompute step and the backtest itself:
 
----
+```bash
+python scripts/precompute_rescans.py --csv path/to/klines.csv --universe 60 \
+    --checkpoint results/rescans.pkl --max-seconds 240
+# rerun the same command if it prints PARTIAL, it resumes
 
-**7. Backtesting and Evaluation**
+python scripts/run_backtest.py --csv path/to/klines.csv --universe 60 \
+    --out results --rescans-checkpoint results/rescans.pkl
+```
 
-Run backtests on **≥ 1.5 years of hourly data**.
+### Run the bot (paper mode, no API key needed)
 
-Track performance metrics:
+```bash
+python bot/main.py --once        # one cycle
+python bot/main.py --loop        # runs continuously, sleeps between 4h candles
+```
 
-- **CAGR** (Compound Annual Growth Rate)  
-- **MDD** (Maximum Drawdown)  
-- **CAGR/MDD > 1.5**  
-- **Sharpe ratio** and **beta vs BTC**
+With no `.env` at all it fetches real market data from Binance (public, no auth) and logs what it would trade, no orders sent. Copy `.env.example` to `.env` to change parameters, capital, or universe.
 
-Save trade logs, equity curves, and performance reports.
+Async, built on `ccxt.async_support`. Places a reduce-only STOP_MARKET on each leg on the exchange as a tail-risk backstop (`LEG_STOP_LOSS_PCT`, 15% default), separate from the strategy's real exit logic which is a joint z-score across both legs and runs every polling cycle.
 
----
+To place real orders: `DRY_RUN=false` plus real `BINANCE_API_KEY`/`BINANCE_API_SECRET`, `USE_TESTNET=true` recommended first. Given the results above, I wouldn't point this at a real account without more validation work.
 
-**8. Optimization and Diversification**
+I could not test exchange connectivity against the real Binance API from the environment this was built in (no network access to Binance there). Covered by a mocked end-to-end test (`tests/test_bot_cycle.py`), but not a real API call. Test on testnet before trusting it, especially `exchange.py::place_protective_stop`.
 
-- Evaluate sensitivity for **z-entry/z-exit thresholds**, **lookback windows**, and **volatility weighting**.  
-- Combine multiple low-correlated cointegration models into a diversified **market-neutral portfolio**.  
-- Periodically re-train and re-evaluate cointegration pairs to adapt to market changes.  
-- Monitor overall **portfolio beta** to maintain neutrality.
+### Run the tests
 
----
+```bash
+pytest tests/ -v
+```
 
-**9. Conclusion and Next Steps**
+## Repo layout
 
-- **Parameter optimization:** Tune z-score thresholds, lookback windows, and half-life using grid search or Hyperopt.  
-- **Advanced backtesting:** Extend the tester to stream data window-by-window to simulate live conditions.  
-- **Dynamic adaptation:** Detect changes in cointegration; exit trades if relationships decay.  
-- **Multi-timeframe analysis:** Explore cross-timeframe cointegration opportunities.  
-- **Trade management:** Test partial take-profits, trailing stops, and dynamic stop adjustments.  
-- **Integration:** Connect to Binance Futures WebSocket for real-time paper trading, then transition to live execution.
+```
+coint_pairs/
+  stats.py       cointegration test, half-life, z-score, beta
+  sizing.py      volatility-parity position sizing
+  data.py        CSV loading, universe selection, price matrix
+backtest/
+  engine.py      event-driven backtest engine
+  metrics.py     performance metrics
+bot/
+  config.py      settings from .env
+  db.py          sqlite state: positions, trades, daily PnL
+  exchange.py    Binance USDT-M futures via ccxt (async)
+  strategy.py    screening + signals, reuses coint_pairs/
+  risk.py        portfolio caps, daily loss kill switch
+  execution/     order placement + position lifecycle
+  main.py        entrypoint
+scripts/         backtest CLI
+results/         backtest output + parameter sweep
+tests/
+```
 
+## Disclaimer
 
-
-
-
- #**Beta Analysis** | **Concept Overview**
-
-In classical finance, the **Beta (β)** coefficient measures how strongly an asset’s returns move relative to the overall market.  
-It quantifies the *systematic risk* — the portion of total risk that cannot be diversified away.
-
-Mathematically, it is defined as:
-
-$$
-\beta = \frac{\mathrm{Cov}(R_i, R_m)}{\mathrm{Var}(R_m)}
-$$
-
-Where:
-
-- **Rᵢ** — returns of the individual asset  
-- **Rₘ** — returns of the market portfolio (e.g., S&P 500)  
-- **Cov(Rᵢ, Rₘ)** — covariance between the asset and the market  
-- **Var(Rₘ)** — variance of the market returns
-
-A high β (>1) indicates that the asset amplifies market movements,  
-while a low β (<1) means it moves less than the market.  
-A β close to 0 implies that the asset behaves independently of market swings — **market-neutral**.
-
-
----
-
-**Application to Cryptocurrencies**
-
-In the cryptocurrency market, **Bitcoin (BTC)** plays the role of the *market benchmark*.  
-Hence, we can rewrite the same formula as:
-
-$$
-\beta_i = \frac{\mathrm{Cov}(r_i, r_{BTC})}{\mathrm{Var}(r_{BTC})}
-$$
-
-Where:
-
-- **rᵢ** — log returns of cryptocurrency *i*  
-- **r₍BTC₎** — log returns of Bitcoin  
-- **Cov(rᵢ, r₍BTC₎)** — covariance between the coin and Bitcoin  
-- **Var(r₍BTC₎)** — variance of Bitcoin’s returns
-
-This approach is inspired by the beta analysis framework presented in
-**[“Cryptocurrency market structure: beta, correlations and risk” (arXiv:1808.02505)](https://arxiv.org/pdf/1808.02505)**.
-
-
----
-
-**Hypotheses**
-
-
-- **H₀:** There is **no significant dependence** between an altcoin’s returns and Bitcoin’s returns (β = 0).  
-- **H₁:** The altcoin’s returns are **significantly correlated** with Bitcoin’s returns (β > 0.5).  
-
-In practice, we are particularly interested in assets (or pairs) for which **β ≈ 0**,   indicating weak market dependence and suitability for **market-neutral hedging**.
-
-
-
- <img width="1320" height="836" alt="image" src="https://github.com/user-attachments/assets/00d05e7b-6072-4496-93da-0f5aed3a6e72" />
-
-After calculating β for 247 cryptocurrencies relative to BTC:
-
-- Average β ≈ 1.25
-
-- Only **PAXGUSDT** has near-zero β (0.06)
-
-- A few (like **TRXUSDT**, **SUNUSDT**) have moderate β (0.4–0.6)
-
-- Most coins show β > 0.5, many even β > 1
-
-- Some (like **ADAUSDT**, **XRPUSDT**, **XLMUSDT**) reach β ≈ 2
-
-
-
-Conclusion
-
-We reject H₀ (no correlation).
-Altcoins show a **strong dependence** on BTC — they mostly move in the same direction and often with even higher volatility.
-
-Therefore, analyzing **beta** neutrality should be done on **pairs**, not on single coins.
-
-
-
-
-
-
-### 2 Position Sizing
-
-Based on the **identified cointegrated pairs** and the computed statistical parameters  
-(β — hedge ratio, z-score — deviation from equilibrium),  
-we can generate **market-neutral long/short trading signals**.
-
-The pipeline proceeds as follows:
-- **Volatility-based Position Sizing**
-- **Quantity Conversion**
-
-Calculates USD allocations for both legs of a pair using inverse realized volatility
-over a rolling window. Ensures that both sides contribute equally to total risk
-(“volatility parity” principle). 
-
-Converts dollar allocations into trade quantities while enforcing
-a maximum notional exposure per pair (e.g., 5% of capital).
-Prevents over-leverage and keeps exposure consistent.
+The strategy as originally specified lost money after realistic costs. A parameter region exists nearby that comes out close to breakeven on the same data, but it was found by searching, not validated out of sample. Not a signal to trade on.
