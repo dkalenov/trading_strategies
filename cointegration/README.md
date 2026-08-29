@@ -36,7 +36,7 @@ Walks forward bar by bar, no lookahead:
 Added on top, since the original design didn't specify risk management:
 
 - Hard stop at |z| >= 4, max holding period of 60 bars.
-- Stop-loss at 1% of capital per pair (the design doc names this figure but the sizing formula it specifies doesn't enforce it, so it's implemented as an actual stop instead).
+- Stop-loss at 1% of capital per pair (the design doc names this figure, but the sizing formula it specifies doesn't enforce it, so it's implemented as an actual stop instead).
 - Position closes if the pair fails the cointegration screen at a rescan while open.
 - 5bps taker fee + 5bps slippage per fill, both legs, both sides. Funding rate is not modeled (not in the dataset), so real performance would likely run somewhat worse than backtested.
 
