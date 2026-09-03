@@ -171,28 +171,9 @@ profitable). That agreement across three independent methods is itself a
 useful sanity check on the tooling, even though the underlying answer here
 is "this doesn't work on BTCUSDT."
 
-## What's actually verified
-
-I (Claude) read every file in this repo, then independently re-ran the
-tooling rather than trusting the numbers as given:
-
-- **No look-ahead bias**: indicators at bar `i` only use data up to and
-  including bar `i`; entries execute at that same bar's close (with
-  slippage), never a future bar.
-- **Deterministic**: re-running the backtest reproduces the exact same
-  numbers every time.
-- **PnL math is internally consistent** — `verify_backtest.py` independently
-  recomputes return from the trade log and cross-checks it against the
-  backtester's own reported stats.
-- `test_edge_cases.py` passes on flat markets, single spikes, pure
-  trends, and forced SL/TP hits (these are smoke tests, not exhaustive
-  proofs — worth strengthening if you extend the strategy).
-- No SQL injection risk in `db.py` (parameterized queries throughout), and
-  no API keys or secrets are hard-coded anywhere in this repo.
-
 ## Before you risk real money
 
-Things this repo does **not** protect you from — read before connecting a
+Things this repo does **not** protect you from - read before connecting a
 funded account:
 
 - **Selection bias across many symbols.** Backtesting a strategy across
@@ -233,12 +214,4 @@ funded account:
 - **This backtests one pair's specific 18-month window.** Markets change
   regimes; nothing here validates forward performance.
 
-None of this means "the code is broken" — the mechanics check out (see
-above). It means: treat any backtest, walk-forward, or Monte Carlo output
-as one data point to interrogate, not a green light. If you do decide to
-run this live, start on testnet, then with real money only at a size you
-can afford to lose entirely, and monitor it closely.
 
-## License
-
-MIT — see `LICENSE`. Use at your own risk; see disclaimer above.
