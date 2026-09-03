@@ -1,4 +1,4 @@
-# Bollinger Bands Strategy — Bybit USDT Perpetual Futures
+# Bollinger Bands Strategy Bybit USDT Perpetual Futures
 
 A backtesting toolkit + testnet trading bot for a Bollinger Bands strategy on
 Bybit USDT perpetual futures: 4 strategy variants, a fee/slippage/funding-aware
