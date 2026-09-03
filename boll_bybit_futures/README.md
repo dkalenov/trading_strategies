@@ -22,7 +22,7 @@ dynamic support/resistance:
 - Upper band = SMA + `nbdevup`×σ, Lower band = SMA − `nbdevdn`×σ
 - **BUY** when price crosses above the upper band (breakout continuation)
 - **SELL** when price crosses below the lower band (breakdown continuation)
-- 4 variants ship with different entry/exit logic — see
+- 4 variants ship with different entry/exit logic, see
   [Strategy variants](#strategy-variants)
 
 ## Quick start
