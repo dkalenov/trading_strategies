@@ -5,7 +5,7 @@ Bybit USDT perpetual futures: 4 strategy variants, a fee/slippage/funding-aware
 backtester, walk-forward optimization, Monte Carlo robustness checks, and a
 WebSocket bot for Bybit's testnet.
 
-> **Disclaimer — read this first.** This is an educational project, not
+> **Disclaimer - read this first.** This is an educational project, not
 > financial advice, and not a proven profitable strategy. On the one pair
 > tested end-to-end in this repo (BTCUSDT, 2024‑01 → 2025‑06, 1h candles),
 > **every variant loses money** after realistic fees. See
