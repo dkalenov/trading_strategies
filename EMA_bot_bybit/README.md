@@ -195,13 +195,11 @@ Parameters: SL = 2.0 ATR, TP = 4.0 ATR + Volume/ATR/Regime filters
 
 ### Analysis
 
-На 1H таймфреymе чистый EMA crossover на BTC не прибылен. Основные причины:
-- Ложные сигналы на боковиках — классическая проблема трендовых стратегий
-- Комиссии съедают маржу при частых входах
-- SL/TP снижает просадку, но не создаёт edge
-- Фильтры улучшают винрейт, но уменьшают количество сделок
-
-EMA crossover в чистом виде не даёт статистического преимущества. Для реальной торговли нужен дополнительный фильтр, определение рыночного режима или комбинация с другими индикаторами. Это baseline, с которого стоит начать эксперименты.
+On the 1-hour timeframe, a raw EMA crossover strategy for BTC does not yield a profit. The main reasons are:
+- False signals during sideways markets—a classic issue for trend-following strategies.
+- Margin requirements impact trades during frequent entries.
+- Stop-loss/take-profit settings account for drawdown but do not provide a statistical edge.
+- Filters improve the win rate but reduce the number of trades.
 
 ---
 
