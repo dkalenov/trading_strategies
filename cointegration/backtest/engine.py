@@ -335,6 +335,12 @@ def run_backtest(
         unrealized_total = pos.qty1 * (price1 - pos.entry_price1) + pos.qty2 * (price2 - pos.entry_price2)
         exit_notional = abs(pos.qty1) * price1 + abs(pos.qty2) * price2
         exit_cost = exit_notional * cost_frac
+        # this exit cost was missing from the equity curve in an earlier
+        # version: it was recorded on the trade for reporting but never
+        # actually deducted here, so ending_equity could come out a few
+        # dozen dollars higher than sum(trade.net_pnl) for a backtest that
+        # ends with open positions. Fixed by applying it to both.
+        equity_curve[t_last] -= exit_cost
         closed_trades.append(Trade(
             pair=f"{a}-{b}", leg1=a, leg2=b, direction=pos.direction,
             entry_bar=pos.entry_bar, entry_date=pos.entry_date,
