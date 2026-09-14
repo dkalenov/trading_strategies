@@ -1,6 +1,0 @@
-numpy>=1.26
-pandas>=2.0
-SQLAlchemy>=2.0
-requests>=2.31
-websockets>=13.0
-pytest>=8.0
