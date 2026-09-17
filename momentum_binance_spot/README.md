@@ -1,4 +1,4 @@
-# Momentum Spot Bot — Binance Spot
+# Momentum Spot Bot - Binance Spot
 
 Simple momentum-based bot that buys the top-performing USDT pair on Binance Spot.
 
