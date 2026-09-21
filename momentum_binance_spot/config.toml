@@ -1,0 +1,14 @@
+# Momentum spot bot configuration.
+# No secrets in here - this file is safe to commit to git.
+# API keys and DRY_RUN live in .env (copy .env.example to get started).
+
+[strategy]
+quote_asset = "USDT"
+lookback_minutes = 120      # live only: how many minutes of 1m candles define "momentum"
+poll_interval_sec = 20      # how often to rescan while flat
+
+[risk]
+take_profit_pct = 0.02      # +2%, same default as the original script
+stop_loss_pct = 0.015       # -1.5%, same default as the original script
+alloc_quote = 15.0          # USDT spent per trade
+max_positions = 1           # the bot only ever holds one position at a time
