@@ -36,10 +36,6 @@ python main.py
 | `tp_pct` | 2% | Take profit percentage |
 | `sl_pct` | 1.5% | Stop loss percentage |
 
-## Backtest Results
 
-No backtest included. Single-file live trading implementation.
 
-## Contacts
 
-Telegram: @KDR_98
