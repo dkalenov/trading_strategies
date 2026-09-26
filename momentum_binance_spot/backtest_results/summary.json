@@ -1,0 +1,49 @@
+{
+  "n_trades": 1466,
+  "date_range": [
+    "2024-05-24 20:00:00+00:00",
+    "2025-10-23 12:00:00+00:00"
+  ],
+  "win_rate_pct": 12.14,
+  "avg_win_pct": 1.842,
+  "avg_loss_pct": -1.647,
+  "expectancy_pct_per_trade": -1.223,
+  "profit_factor": 0.155,
+  "avg_bars_held": 1.11,
+  "exit_reason_counts": {
+    "stop_loss": 1287,
+    "take_profit": 177,
+    "data_gap": 1,
+    "timeout": 1
+  },
+  "compounding_final_equity": 0.0,
+  "compounding_max_drawdown_pct": -100.0,
+  "fixed_stake_total_pnl_usd": -268.95,
+  "fixed_stake_max_drawdown_usd": -269.23,
+  "fixed_stake_amount_usd": 15.0,
+  "DATA_RESOLUTION_WARNING": "52.9% of trades hit a bar where both the take-profit and the stop-loss fell inside that single 4h candle's high/low range. 4h OHLC data cannot tell you which one actually happened first. This run resolved ties using tie_break='conservative'. Run backtest.py with --tie-break optimistic vs --tie-break conservative vs --tie-break probabilistic to see how much that single assumption moves the result - on this dataset it's the difference between the strategy looking clearly unprofitable and looking clearly profitable. See README.md.",
+  "assumptions": {
+    "take_profit_pct": 0.02,
+    "stop_loss_pct": 0.015,
+    "fee_pct_per_side": 0.001,
+    "slippage_pct_per_side": 0.0005,
+    "max_hold_bars": 60,
+    "momentum_filter_applied": true,
+    "tie_break": "conservative",
+    "tie_break_seed": 42
+  },
+  "TIE_BREAK_BRACKET": {
+    "this_run_tie_break": "conservative",
+    "conservative": {
+      "expectancy_pct_per_trade": -1.223,
+      "win_rate_pct": 12.14,
+      "profit_factor": 0.155
+    },
+    "optimistic": {
+      "expectancy_pct_per_trade": 0.627,
+      "win_rate_pct": 65.08,
+      "profit_factor": 2.091
+    },
+    "note": "'conservative' and 'optimistic' are the two extremes (stop-first vs target-first on every ambiguous bar). 'probabilistic' (if not shown above, run with --tie-break probabilistic) models each ambiguous bar individually instead of picking an extreme - see README."
+  }
+}
