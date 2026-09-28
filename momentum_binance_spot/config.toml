@@ -1,6 +1,5 @@
 # Momentum spot bot configuration.
-# No secrets in here - this file is safe to commit to git.
-# API keys and DRY_RUN live in .env (copy .env.example to get started).
+# Set your API keys to get started.
 
 [strategy]
 quote_asset = "USDT"
