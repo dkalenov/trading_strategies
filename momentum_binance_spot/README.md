@@ -1,13 +1,13 @@
 # Momentum Spot Bot - Binance Spot
 
-Simple momentum-based bot that buys the top-performing USDT pair on Binance Spot.
+Simple momentum-based bot that buys the top performing USDT pair on Binance Spot.
 
 **Disclaimer:** Educational purposes only. Crypto trading carries high risk of total loss.
 
 ## How It Works
 
 - Scans all Binance USDT pairs for highest 24h price change percentage
-- Fetches 120 minutes of 1-minute candles for the top performer
+- Fetches 120 minutes of 1 minute candles for the top performer
 - If cumulative return over the window is positive → BUY
 - Exits at +2% take profit or -1.5% stop loss
 
