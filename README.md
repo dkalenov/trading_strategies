@@ -21,8 +21,8 @@ Automated trading bots and quantitative strategies for cryptocurrency exchanges 
 
 Trading strategies and bots covering:
 
-- **Trend Following** — EMA Bot, SuperTrend Bot, UTBot Strategy, Sloping Bot, Sloping Bot 2.0
-- **Volatility / Bands** — Bollinger Futures
+- **Trend Following** - EMA Bot, SuperTrend Bot, UTBot Strategy, Sloping Bot, Sloping Bot 2.0
+- **Volatility / Bands** - Bollinger Futures
 - **Momentum** — Momentum Spot, Momentum Futures
 - **Breakout** — Breakout Spot, Williams Fractal
 - **Pattern Recognition** — Candle Patterns, ML Candle Patterns
