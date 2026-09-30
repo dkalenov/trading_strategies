@@ -25,12 +25,12 @@ Trading strategies and bots covering:
 - **Volatility / Bands** - Bollinger Futures
 - **Momentum** - Momentum Spot, Momentum Futures
 - **Breakout** - Breakout Spot, Williams Fractal
-- **Pattern Recognition** — Candle Patterns, ML Candle Patterns
-- **Statistical Arbitrage** — Cointegration, Mean Reversion
-- **Grid Trading** — Grid Trading
-- **Orderbook Analysis** — Density Bot
-- **Signals** — TradingView Screener, Trigger Orders
-- **Alerts** — Price Alerts
+- **Pattern Recognition** - Candle Patterns, ML Candle Patterns
+- **Statistical Arbitrage** - Cointegration, Mean Reversion
+- **Grid Trading** - Grid Trading
+- **Orderbook Analysis** - Density Bot
+- **Signals** - TradingView Screener, Trigger Orders
+- **Alerts** - Price Alerts
 
 ---
 
