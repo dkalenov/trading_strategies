@@ -27,8 +27,8 @@ The first EMA value is typically seeded with SMA of the first `Period` prices.
 
 | Feature | EMA | SMA |
 |---------|-----|-----|
-| **Responsiveness** | Fast — reacts quickly to price changes | Slow — lags behind |
-| **Weighting** | Exponential — recent prices matter more | Equal — all prices weighted equally |
+| **Responsiveness** | Fast - reacts quickly to price changes | Slow - lags behind |
+| **Weighting** | Exponential - recent prices matter more | Equal - all prices weighted equally |
 | **False signals** | More prone to noise | Fewer, but delayed |
 | **Best for** | Short-term trading, trending markets | Long-term trends, filtering noise |
 
