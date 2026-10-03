@@ -5,7 +5,7 @@ and a WebSocket live-testnet bot. This version follows a full audit that
 found the live bot generated signals a different way than the backtest
 tested them, three files each had their own inconsistent position-sizing
 formula, and the headline "98 pairs" result in the old README wasn't
-reproducible from anything in this repo — see **What changed** below for
+reproducible from anything in this repo - see **What changed** below for
 the full list and how each was fixed.
 
 **Disclaimer:** Educational project. Not financial advice. Crypto
@@ -38,7 +38,7 @@ Position size is risk-based: `risk_pct` of equity is the dollar amount
 you're willing to lose if the stop is hit, from which quantity is derived
 and then capped by `leverage`. This is now the **one** formula
 (`utils.compute_position_size`), used identically by the backtester and
-every live/testnet code path — see **What changed**.
+every live/testnet code path - see **What changed**.
 
 ## Project structure
 
