@@ -46,11 +46,11 @@ every live/testnet code path - see **What changed**.
 |---|---|
 | `strategy.py` | `UTBotCore` (the indicator) + `SuperTrendFilter` / `RSIFilter` |
 | `utils.py` | Kline download/cache, Wilder's ATR, the shared position-sizing function |
-| `backtester.py` | `Backtester` — all four strategy variants, realistic costs |
+| `backtester.py` | `Backtester` - all four strategy variants, realistic costs |
 | `debug_mode.py` | Verbose trade-by-trade printout — now just a display layer over `Backtester`, not a second implementation |
 | `main.py` | CLI: backtest / monthly analysis / parameter optimization, SQLite result storage |
 | `db.py` | SQLite schema + read/write helpers for `main.py` |
-| `live_testnet.py` | WebSocket bot — real-time execution on Binance Futures Testnet |
+| `live_testnet.py` | WebSocket bot - real-time execution on Binance Futures Testnet |
 | `testnet_once.py` | One-shot: check the current signal and place a single order if there is one |
 | `scan_signals.py` | Read-only signal scan across a symbol watchlist and multiple intervals |
 | `config.py` / `config.ini` | Central configuration (symbol, strategy params, costs, leverage) |
