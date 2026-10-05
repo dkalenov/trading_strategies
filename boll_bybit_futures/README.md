@@ -55,7 +55,7 @@ for historical klines).
 ### Live testnet bot
 
 The bot only ever runs against Bybit's **testnet** unless you explicitly pass
-`--mainnet` — and even then, `--live` is required to place real orders.
+`--mainnet` - and even then, `--live` is required to place real orders.
 Without `--live` it's a dry run that prints signals but sends nothing.
 
 ```bash
