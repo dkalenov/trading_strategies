@@ -173,8 +173,8 @@ disagreeing about what strategy was actually being traded, in three
 separate ways, plus a headline README claim with no supporting code:
 
 - **The live bot generated signals from price ticks, not candle closes.**
-  `live_testnet.py`'s `on_tick()` — wired to the `miniTicker` WebSocket
-  stream, firing roughly once per second — called `UTBotCore.update()`
+  `live_testnet.py`'s `on_tick()` - wired to the `miniTicker` WebSocket
+  stream, firing roughly once per second - called `UTBotCore.update()`
   on every tick. `UTBotCore` is a recursive, stateful translation of the
   Pine Script indicator that assumes one call per candle close (exactly
   how `backtester.py` calls it, and how TradingView evaluates it); feeding
@@ -194,7 +194,7 @@ separate ways, plus a headline README claim with no supporting code:
   `balance × leverage`. On real BTCUSDT ATR values, the backtested
   position could be **up to 15x larger** than what the live bot would
   actually have placed for the identical signal. Fixed: all of it now
-  calls `utils.compute_position_size()` — one function, leverage is the
+  calls `utils.compute_position_size()` - one function, leverage is the
   one governing cap, no hidden constant.
 - **`--leverage` / `--commission` (and `config.ini`'s `leverage`,
   `commission`, `slippage`) did nothing.** All three places `main.py`
@@ -204,7 +204,7 @@ separate ways, plus a headline README claim with no supporting code:
   vs `--leverage 20` before the fix). Fixed via one `_build_backtester()`
   helper that actually reads `config`; added `--slippage` / `--risk-pct`
   flags that were missing entirely.
-- **`scan_signals.py` didn't run at all** — `ImportError: cannot import
+- **`scan_signals.py` didn't run at all** - `ImportError: cannot import
   name 'get_klines'` (the function had been renamed to `fetch_klines` in
   `live_testnet.py` and the one caller never got updated). Fixed, and
   the file's own from-scratch ATR reimplementation (a third copy of the
