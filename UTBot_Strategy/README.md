@@ -139,7 +139,7 @@ different (and much less alarming) risk profile than a strategy with no
 per-trade stop-loss, precisely because every trade here has a hard,
 ATR-sized SL from the moment it opens.
 
-## Parameter sensitivity — a systematic sweep, not a cherry-picked result
+## Parameter sensitivity - a systematic sweep, not a cherry-picked result
 
 `sweep_results.csv` in this repo contains **all 36** combinations of
 `key_value ∈ {8,10,12,15} × atr_period ∈ {10,14,20} × leverage ∈ {1,3,5}`,
@@ -147,19 +147,19 @@ ATR-sized SL from the moment it opens.
 just the good ones.
 
 - **33 / 36 (91.7%) were profitable.** Median return: **+10.79%**.
-- Best: `key_value=12, atr_period=14` (leverage=3x or 5x — leverage only
+- Best: `key_value=12, atr_period=14` (leverage=3x or 5x - leverage only
   matters where the risk-based quantity would otherwise exceed it, which
   is rare here) → **+33.20%**, max DD 13.51%.
-- Worst: `key_value=8, atr_period=20` (leverage=3x or 5x — tied) →
-  **-13.98%**, max DD 24.13%, 35.2% win rate — a genuinely bad
+- Worst: `key_value=8, atr_period=20` (leverage=3x or 5x - tied) →
+  **-13.98%**, max DD 24.13%, 35.2% win rate - a genuinely bad
   combination, not filtered out.
 - `key_value=8` (a tighter/more sensitive trailing stop) combined with a
   longer `atr_period=20` (slower-reacting ATR) consistently produced the
-  worst results in this sweep — more, smaller, lower-quality trades
+  worst results in this sweep - more, smaller, lower-quality trades
   (193 vs ~90-110 for other settings). This is a directional signal from
   one asset/period, not a tuned recommendation.
 
-Reproduce it yourself — the sweep is plain Python over `Backtester`, not
+Reproduce it yourself - the sweep is plain Python over `Backtester`, not
 a separate script in this version, but the loop is three lines:
 ```python
 for kv, ap, lev in itertools.product([8,10,12,15], [10,14,20], [1,3,5]):
