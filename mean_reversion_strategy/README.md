@@ -1,4 +1,4 @@
-# Mean Reversion Strategy — Bybit Futures
+# Mean Reversion Strategy - Bybit Futures
 
 Simple mean reversion bot that trades price deviations from SMA for Bybit Futures.
 
