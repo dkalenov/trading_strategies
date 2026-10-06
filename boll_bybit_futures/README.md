@@ -196,7 +196,7 @@ funded account:
   polished, precise-looking "ROBUST" verdict for a strategy that isn't.
   (An earlier version of `monte_carlo.py` in this project actually had a bug
   that double-accumulated the equity curve and inflated every number in the
-  permutation test — always worth distrusting a suspiciously clean result
+  permutation test, always worth distrusting a suspiciously clean result
   and going to re-derive it by hand, which is how that one was caught.)
 - **No exchange liquidation modeling.** The backtester simulates your own
   stop-loss order, not Bybit's maintenance-margin liquidation engine. At
