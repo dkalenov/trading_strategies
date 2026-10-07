@@ -39,10 +39,10 @@ Open in Google Colab or run locally.
 
 ### Feature Engineering
 
-1. **Candlestick patterns** — 13 binary features (True/False for each pattern)
-2. **Returns** — price change percentage
-3. **Volatility** — standard deviation of recent prices
-4. **Volume ratio** — current volume vs average volume
+1. **Candlestick patterns** - 13 binary features (True/False for each pattern)
+2. **Returns** - price change percentage
+3. **Volatility** - standard deviation of recent prices
+4. **Volume ratio** - current volume vs average volume
 
 ### Stationarity
 
