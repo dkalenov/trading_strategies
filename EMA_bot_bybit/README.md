@@ -65,17 +65,17 @@ Fast EMA (12)  ─── crosses BELOW ───→  Slow EMA (26)  =  SELL (SHO
 
 ### Signal Examples
 
-**LONG — Golden Cross:**
+**LONG - Golden Cross:**
 ![LONG Signal](example_1_long.png)
 
 The fast EMA (blue) crosses above the slow EMA (orange), indicating the short-term trend is turning bullish. The green triangle marks the entry point.
 
-**SHORT — Death Cross:**
+**SHORT - Death Cross:**
 ![SHORT Signal](example_2_short.png)
 
 The fast EMA (blue) crosses below the slow EMA (orange), indicating the short-term trend is turning bearish. The red triangle marks the entry point.
 
-**Whipsaw — Rapid Reversal:**
+**Whipsaw - Rapid Reversal:**
 ![Whipsaw](example_3_whipsaw.png)
 
 A common problem with EMA crossover: the price rapidly reverses after entry, causing a loss. This is why additional filters and risk management are essential.
