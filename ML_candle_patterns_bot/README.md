@@ -59,8 +59,8 @@ This ensures the ML model trains on statistically meaningful data.
 
 | File | Description |
 |------|-------------|
-| `main.py` | Bot entry point — loads data, runs strategy, generates signals |
-| `strategy.py` | Strategy logic — patterns + ML model combined |
+| `main.py` | Bot entry point - loads data, runs strategy, generates signals |
+| `strategy.py` | Strategy logic - patterns + ML model combined |
 | `data_loader.py` | Binance klines data loader |
 | `patterns.py` | Candlestick pattern detection (13 patterns) |
 | `ml_models.py` | GradientBoosting model training and prediction |
@@ -79,7 +79,7 @@ python backtest.py
 Default parameters:
 - Symbol: ADAUSDT
 - Interval: 15m
-- Period: 2022-09 — 2025-09
+- Period: 2022.09-2025.09
 - SL: 2% | TP: 4%
 - Commission: 0.1%
 
