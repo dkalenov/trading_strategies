@@ -104,7 +104,7 @@ For live trading, use the `algofactory_bot/` framework.
 **IMPORTANT:** `algofactory_bot/` is a black box. DO NOT modify or change it.
 
 Strategy connects as an adapter:
-- `strategy.py` — pattern detection + ML prediction
+- `strategy.py` - pattern detection + ML prediction
 - Signals (LONG/SHORT) are passed to the framework
 
 ## Contacts
