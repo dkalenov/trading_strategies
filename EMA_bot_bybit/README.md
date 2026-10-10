@@ -43,11 +43,11 @@ The first EMA value is typically seeded with SMA of the first `Period` prices.
 
 ### Other Moving Average Types
 
-- **SMA (Simple Moving Average)** — equal weight to all prices in the window
-- **WMA (Weighted Moving Average)** — linear weighting (recent prices weighted more)
-- **DEMA (Double EMA)** — EMA of EMA, even faster response
-- **TEMA (Triple EMA)** — triple smoothing for reduced lag
-- **HMA (Hull Moving Average)** — weighted EMA with reduced lag
+- **SMA (Simple Moving Average)** - equal weight to all prices in the window
+- **WMA (Weighted Moving Average)** - linear weighting (recent prices weighted more)
+- **DEMA (Double EMA)** - EMA of EMA, even faster response
+- **TEMA (Triple EMA)** - triple smoothing for reduced lag
+- **HMA (Hull Moving Average)** - weighted EMA with reduced lag
 
 ---
 
