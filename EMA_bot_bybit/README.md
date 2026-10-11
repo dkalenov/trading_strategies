@@ -98,26 +98,26 @@ A common problem with EMA crossover: the price rapidly reverses after entry, cau
 
 ### What is Implemented
 
-**`main.py` — Live Bot:**
+**`main.py` - Live Bot:**
 - EMA crossover signal detection
 - Position awareness (checks current position before entry)
 - Automatic position flip (close SHORT before opening LONG, and vice versa)
 - Configurable EMA periods, symbol, quantity, timeframe
 - Sleeps until next candle close (no idle polling)
 
-**`bybit.py` — Exchange API:**
+**`bybit.py` - Exchange API:**
 - Bybit v5 REST API wrapper
 - HMAC signature generation
 - GET requests (klines, position info)
 - POST requests (market orders)
 - Futures (linear) and Spot support
 
-**`indicators.py` — EMA Calculation:**
+**`indicators.py` - EMA Calculation:**
 - Pure numpy implementation (no external dependencies)
 - Seeds with SMA for first value
 - Exponential smoothing for subsequent values
 
-**`backtest.py` — Basic Backtest:**
+**`backtest.py` - Basic Backtest:**
 - Downloads historical data from Binance Vision
 - EMA(12/26) crossover without SL/TP
 - Uses `backtesting.py` library
