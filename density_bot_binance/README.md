@@ -13,7 +13,7 @@ I built this bot to find out. It monitors orderbooks on Binance Futures, detects
 
 ## Results
 
-The bot ran in dry-run mode across multiple strategy versions over several weeks. **It is unprofitable.** Win rate stayed around 35-40%, and the best-performing version was not statistically significant. Different versions used different parameters, deposit sizes, and filters, so no single number captures the full picture — the consistent finding was that the strategy does not produce a reliable edge.
+The bot ran in dry-run mode across multiple strategy versions over several weeks. **It is unprofitable.** Win rate stayed around 35-40%, and the best-performing version was not statistically significant. Different versions used different parameters, deposit sizes, and filters, so no single number captures the full picture - the consistent finding was that the strategy does not produce a reliable edge.
 
 ## Local Setup
 
@@ -37,7 +37,7 @@ Set `TESTNET=true` in `config.ini` for simulated trading.
 
 ## Why It Loses vs Real HFT
 
-The strategy itself isn't the problem — the infrastructure gap is. I measured the actual latency of this bot:
+The strategy itself isn't the problem - the infrastructure gap is. I measured the actual latency of this bot:
 
 **Measured latency (from this machine):**
 - REST API round-trip to Binance: **~95ms** avg (P50: 93ms, P95: 142ms)
