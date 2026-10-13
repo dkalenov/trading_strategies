@@ -258,7 +258,7 @@ separate ways, plus a headline README claim with no supporting code:
   further.
 - **Tick/step-size rounding** (`live_testnet.py`) is derived from the
   exchange's real `tickSize`/`stepSize` filters via `log10`, which is
-  only exact when those are clean powers of ten — true for BTCUSDT, not
+  only exact when those are clean powers of ten - true for BTCUSDT, not
   guaranteed for every symbol.
 - Nothing here is financial advice. Test on testnet, understand the
   mechanics, and only risk money you can afford to lose.
