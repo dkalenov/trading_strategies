@@ -55,8 +55,8 @@ The first EMA value is typically seeded with SMA of the first `Period` prices.
 
 The bot uses **EMA Crossover** - one of the most fundamental trend-following strategies:
 
-- **Golden Cross (LONG):** Fast EMA crosses above Slow EMA — bullish signal
-- **Death Cross (SHORT):** Fast EMA crosses below Slow EMA — bearish signal
+- **Golden Cross (LONG):** Fast EMA crosses above Slow EMA - bullish signal
+- **Death Cross (SHORT):** Fast EMA crosses below Slow EMA - bearish signal
 
 ```
 Fast EMA (12)  ─── crosses ABOVE ───→  Slow EMA (26)  =  BUY (LONG)
