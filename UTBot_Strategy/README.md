@@ -214,7 +214,7 @@ separate ways, plus a headline README claim with no supporting code:
   `take_loss` strategy loop** that silently omitted slippage on every
   exit type. Confirmed by running both on identical data: same 6 trades,
   different final capital ($95,130.64 vs $95,242.47). Fixed by deleting
-  the duplicate logic entirely — `debug_mode.py` now calls
+  the duplicate logic entirely - `debug_mode.py` now calls
   `Backtester.run()` and only adds verbose per-trade printing, so it
   cannot diverge from the real backtester again.
 - **The funding-cost model charged funding on the "borrowed" portion of
