@@ -136,7 +136,7 @@ elif crossover(self.slow_ema, self.fast_ema):
 ```
 
 This means:
-- **No stop-loss** — a losing position can stay open for weeks or months until the next crossover
+- **No stop-loss** - a losing position can stay open for weeks or months until the next crossover
 - **No take-profit** — a winning position closes only when the trend reverses
 - The position is always either LONG or SHORT — never flat (except between crossover and execution)
 
