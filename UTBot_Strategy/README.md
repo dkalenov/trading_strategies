@@ -234,7 +234,7 @@ separate ways, plus a headline README claim with no supporting code:
   only multi-symbol code that existed) checks 9 current signals, not a
   98-symbol historical backtest. Removed; replaced with the real,
   reproducible single-symbol results above.
-- `requirements.txt` was missing `pytz` (imported by `utils.py`) — a
+- `requirements.txt` was missing `pytz` (imported by `utils.py`) - a
   fresh install would fail. Fixed.
 
 ## Risk / limitations
