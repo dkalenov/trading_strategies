@@ -45,7 +45,7 @@ The strategy itself isn't the problem - the infrastructure gap is. I measured th
 - Python event loop overhead: **~0.5-2ms** (GIL, GC, context switches)
 - **Total signal-to-order: ~100ms**
 
-A co-located HFT server achieves network round-trips under **50 microseconds** — that's a 2000x gap. The order of operations:
+A co-located HFT server achieves network round-trips under **50 microseconds** - that's a 2000x gap. The order of operations:
 
 1. WebSocket message arrives (same for everyone)
 2. Python parses JSON + runs scoring logic (~1-5ms)
