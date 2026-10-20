@@ -69,10 +69,10 @@ By step 3, an HFT firm has already completed steps 1-4 and exited its position.
 ## What Would Actually Be Needed
 
 **Without rewriting in C++:**
-- Keep HTTP connections alive with connection pooling — avoids TCP handshake overhead on each order
+- Keep HTTP connections alive with connection pooling - avoids TCP handshake overhead on each order
 - Pre-compute order parameters before density is confirmed
 - Reduce ENTRY_CONFIRMATION_DELAY from 5s to 1-2s (densities disappear in <5s)
-- Note: Binance Futures does NOT have WebSocket API for order placement — orders go through REST API only. WebSocket is used for market data and user data streams.
+- Note: Binance Futures does NOT have WebSocket API for order placement - orders go through REST API only. WebSocket is used for market data and user data streams.
 
 **With infrastructure changes:**
 - Co-locate next to Binance matching engine (Tokyo). Monthly cost: $5k-50k/rack
