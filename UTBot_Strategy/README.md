@@ -248,7 +248,7 @@ separate ways, plus a headline README claim with no supporting code:
   `max_leverage` bounds position size but the backtester doesn't check
   for margin calls mid-trade.
 - **SL and TP are checked in a fixed order when both fall inside the same
-  candle's range** (SL first, for LONG and SHORT alike) — a deliberate,
+  candle's range** (SL first, for LONG and SHORT alike) - a deliberate,
   conservative tie-break, not a resolved ambiguity: OHLC data alone
   cannot tell you which was actually touched first.
 - **Live bot assumes one-way position mode** and a REST fetch of the
