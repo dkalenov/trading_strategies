@@ -110,7 +110,7 @@ python testnet_once.py --symbol BTCUSDT --interval 1h            # dry run
 python testnet_once.py --symbol BTCUSDT --interval 1h --live     # places an order if there's a signal
 ```
 
-## Honest backtest results
+## Backtest results
 
 BTCUSDT, 1h, 2021-01 → 2025-06 (39,408 candles, verified gap-free and
 duplicate-free), `key_value=12, atr_period=14, tp_mult=3.0, sl_mult=1.5`,
