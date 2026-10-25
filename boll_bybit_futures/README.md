@@ -1,4 +1,4 @@
-# Bollinger Bands Strategy Bybit USDT Perpetual Futures
+# Bollinger Bands Strategy - Bybit USDT Perpetual Futures
 
 A backtesting toolkit + testnet trading bot for a Bollinger Bands strategy on
 Bybit USDT perpetual futures: 4 strategy variants, a fee/slippage/funding-aware
@@ -7,7 +7,7 @@ WebSocket bot for Bybit's testnet.
 
 > **Disclaimer - read this first.** This is an educational project, not
 > financial advice, and not a proven profitable strategy. On the one pair
-> tested end-to-end in this repo (BTCUSDT, 2024‑01 → 2025‑06, 1h candles),
+> tested end-to-end in this repo (BTCUSDT, 2024-01 → 2025-06, 1h candles),
 > **every variant loses money** after realistic fees. See
 > [Results](#backtest-results-btcusdt-1h-2024-01--2025-06) and
 > [Before you risk real money](#before-you-risk-real-money) before doing
@@ -22,7 +22,7 @@ dynamic support/resistance:
 - Upper band = SMA + `nbdevup`×σ, Lower band = SMA − `nbdevdn`×σ
 - **BUY** when price crosses above the upper band (breakout continuation)
 - **SELL** when price crosses below the lower band (breakdown continuation)
-- 4 variants ship with different entry/exit logic, see
+- 4 variants ship with different entry/exit logic - see
   [Strategy variants](#strategy-variants)
 
 ## Quick start
@@ -59,25 +59,25 @@ The bot only ever runs against Bybit's **testnet** unless you explicitly pass
 Without `--live` it's a dry run that prints signals but sends nothing.
 
 ```bash
-# Free — no funded account needed to create testnet API keys:
+# Free - no funded account needed to create testnet API keys:
 # https://testnet.bybit.com/app/user/api-management
 export BYBIT_TESTNET_API_KEY=your_key
 export BYBIT_TESTNET_API_SECRET=your_secret
 
-# Dry run — prints signals only, places nothing
+# Dry run - prints signals only, places nothing
 python live_testnet.py --symbol BTCUSDT --interval 1h --variant basic
 
-# Real orders on TESTNET (fake money) — trades the actual strategy signal
+# Real orders on TESTNET (fake money) - trades the actual strategy signal
 python live_testnet.py --symbol BTCUSDT --interval 1h --variant basic --live
 
-# Connectivity/order-placement smoke test only — ignores the strategy signal
+# Connectivity/order-placement smoke test only - ignores the strategy signal
 # entirely and force-opens alternating positions every candle. Dry-run only;
 # the bot refuses to combine --debug with --live.
 python live_testnet.py --symbol BTCUSDT --interval 1h --debug
 ```
 
 `--mainnet-data` uses mainnet for price data while still trading on testnet
-(some symbols have thin/fake data on testnet) — data source and order
+(some symbols have thin/fake data on testnet) - data source and order
 destination are independent flags on purpose.
 
 ## Files
@@ -110,7 +110,7 @@ destination are independent flags on purpose.
 | `sl_multiplier` | 1.5 | Stop loss = entry ± (BB width × 1.5 / 2) |
 | `leverage` | 20x | Max leverage cap for position sizing |
 | `risk_pct` | 1% | Capital risked per trade (at the stop-loss distance) |
-| `commission` | 0.055% | Bybit standard (non-VIP) taker fee — lower this if you have a fee discount tier |
+| `commission` | 0.055% | Bybit standard (non-VIP) taker fee - lower this if you have a fee discount tier |
 | `slippage` | 0.02% | Estimated slippage per fill |
 | `funding_rate` | 0.01% | Per 8h funding period, applied to full position notional |
 
@@ -129,7 +129,7 @@ REST API  ──→  market order (entry) + SL algo order + TP algo order
 ```
 
 Signals are evaluated **once per closed candle**, using that candle's final
-close — exactly matching how the backtester evaluates each bar. Live ticks
+close - exactly matching how the backtester evaluates each bar. Live ticks
 between candle closes are shown for visibility but never trigger a trade
 decision; earlier drafts of this bot recomputed signals on every tick, which
 let live behaviour drift from what was actually backtested. If you're
@@ -145,31 +145,57 @@ place order decisions are made.
 | `squeeze` | Only trades breakouts following a period of below-average BB width |
 | `mean_reversion` | Enter on band touch, exit at the middle band (fades the move) |
 
-## Backtest results: BTCUSDT 1h (2024-01 → 2025-06)
+## Backtest results: BTCUSDT 1h (2024-01 to 2025-06)
 
 Reproduce with `python main.py --symbol BTCUSDT --interval 1h --all-variants`
 or see `sample_output/btcusdt_all_variants.txt`.
 
 | Variant | Return | Sharpe | Win Rate | Trades | Max DD | Profit Factor |
 |---------|--------|--------|----------|--------|--------|----------------|
-| basic | -21.25% | -0.58 | 36.1% | 460 | -31.40% | 0.91 |
-| rsi_filter | -16.71% | -0.43 | 36.3% | 441 | -27.9% | 0.94 |
-| squeeze | -20.90% | -1.15 | 32.3% | 127 | -22.0% | 0.72 |
-| mean_reversion | -99.94% | -21.2 | 22.9% | 1657 | -99.94% | 0.18 |
+| basic | -15.48% | -0.38 | 36.1% | 460 | -28.87% | 0.94 |
+| rsi_filter | -10.99% | -0.24 | 36.1% | 441 | -26.49% | 0.95 |
+| squeeze | -19.26% | -1.04 | 32.3% | 127 | -20.30% | 0.78 |
+| mean_reversion | -73.75% | -6.42 | 33.1% | 856 | -73.86% | 0.49 |
 
-**None of these are profitable at realistic Bybit fees.** `mean_reversion`
-essentially blows up the account (very tight take-profit relative to stop
-distance and fees). This is disclosed, not hidden — it's included so you can
-see the harness handles a clearly-losing strategy sanely, and so nobody
-mistakes this repo for a "this makes money" claim.
+Costs modeled: 0.055% taker fee per side, 0.02% slippage per fill (applied to
+the fill price, counted once), and funding of 0.01% per 8h on the full notional,
+always charged as a cost (a conservative simplification: with a positive rate
+shorts actually receive funding). All variants lose money on this pair and
+period. `mean_reversion` exits at the middle band, so its average win is small
+relative to the stop distance and fees eat most of the edge.
 
-`sample_output/` also has a full `walk_forward.py` and `monte_carlo.py` run
-on BTCUSDT/basic, generated by the code in this repo exactly as it stands —
-both agree with each other and with the table above (compound OOS return
-roughly -6% to -20% depending on the test, 0% of Monte Carlo permutations
-profitable). That agreement across three independent methods is itself a
-useful sanity check on the tooling, even though the underlying answer here
-is "this doesn't work on BTCUSDT."
+Sharpe and Sortino use per-bar equity returns annualized with the bar size of
+the chosen interval. "Calmar" in the output is total return divided by max
+drawdown over the whole test period, not the annualized Calmar ratio.
+
+`sample_output/` also has a `walk_forward.py` run (2 windows, 12 month train /
+3 month test; 1 of 2 test windows profitable, compound test return -12.19%) and
+a `monte_carlo.py` run (bootstrap: about 26% of resampled trade sets are
+profitable). Both use a fixed seed (`--seed`, default 42) so they reproduce.
+Two windows and one symbol are a tiny sample; they are a smoke test of the
+tooling, not evidence for or against the strategy.
+
+## What is checked, and how
+
+- `python -m pytest test_regressions.py` covers: slippage counted once, final
+  equity equal to initial capital plus the sum of trade PnL (including a
+  position still open at the end of data), funding period derived from the
+  bar size, the mean reversion exit signal not reopening a trade on the same
+  bar, walk-forward train/test windows never overlapping, prefix invariance
+  (results do not change when future bars are removed), Bybit trigger
+  directions, the dry-run write block, and that an unreadable exchange state is
+  never treated as "no position".
+- `python verify_backtest.py` re-derives per-trade PnL, checks SL/TP fills
+  (allowing for slippage), runs the prefix invariance check, and checks the
+  accounting identity for every variant.
+- `python test_edge_cases.py` runs synthetic-market smoke tests with assertions.
+- Parameter search in `walk_forward.py` is seeded, so its output is reproducible.
+- `db.py` uses parameterized queries. No API keys are stored in the repo; the
+  live bot reads them from environment variables.
+
+Limits of these checks: they show the code is internally consistent, not that
+the strategy has an edge, and the live/testnet path has not been exercised
+against a real exchange in this repo.
 
 ## Before you risk real money
 
@@ -181,31 +207,29 @@ funded account:
   will always surface a handful of "winners" even for a strategy with zero
   real edge, purely from testing that many hypotheses at once. A good
   Sharpe ratio on the single best symbol out of 200+ is not, by itself,
-  evidence of a real edge — you'd need to validate that symbol's parameters
+  evidence of a real edge - you'd need to validate that symbol's parameters
   on data the selection process never saw.
 - **Walk-forward windows are limited by how much history you have.** With
   ~18 months of data and a 6–12 month training window, you only get a
   handful of out-of-sample test windows. Treat a "2 out of 2 profitable
-  windows" result as a weak signal, not proof of robustness — the sample
+  windows" result as a weak signal, not proof of robustness - the sample
   size is tiny either way.
 - **Monte Carlo here tests path-dependency of the trades you already got,
   not whether the strategy has genuine predictive edge.** It answers "is
   this specific set of trades sensitive to their order/composition?", not
   "will this work going forward on data it hasn't seen." Useful, but it's
-  one piece of evidence, not a verdict — and it will happily give you a
+  one piece of evidence, not a verdict - and it will happily give you a
   polished, precise-looking "ROBUST" verdict for a strategy that isn't.
-  (An earlier version of `monte_carlo.py` in this project actually had a bug
-  that double-accumulated the equity curve and inflated every number in the
-  permutation test, always worth distrusting a suspiciously clean result
-  and going to re-derive it by hand, which is how that one was caught.)
+  The permutation test only reorders the same trades, so it cannot change the
+  final capital; it is useful for drawdown, not for profitability.
 - **No exchange liquidation modeling.** The backtester simulates your own
   stop-loss order, not Bybit's maintenance-margin liquidation engine. At
   high leverage, a fast enough move against you can liquidate the position
   before your stop-loss order fills, especially on lower-liquidity
-  altcoins — that outcome is worse than anything in this backtest.
+  altcoins - that outcome is worse than anything in this backtest.
   Position sizing here is risk-based (caps risk at `risk_pct` of capital
   given the stop distance), which keeps typical implied leverage well below
-  the `leverage` cap — but check the actual notional/leverage a signal
+  the `leverage` cap - but check the actual notional/leverage a signal
   produces before trusting it blind, especially in tight-range (squeeze)
   conditions.
 - **Fees, slippage, and funding are estimates, not guarantees.** Confirm
@@ -214,4 +238,12 @@ funded account:
 - **This backtests one pair's specific 18-month window.** Markets change
   regimes; nothing here validates forward performance.
 
+None of this means "the code is broken" - the mechanics check out (see
+above). It means: treat any backtest, walk-forward, or Monte Carlo output
+as one data point to interrogate, not a green light. If you do decide to
+run this live, start on testnet, then with real money only at a size you
+can afford to lose entirely, and monitor it closely.
 
+## License
+
+MIT - see `LICENSE`. Use at your own risk; see disclaimer above.

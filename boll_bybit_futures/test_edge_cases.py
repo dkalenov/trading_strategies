@@ -10,7 +10,7 @@ from strategy import StrategyParams, BollingerBandsCore, calculate_bollinger_ban
 from backtester import Backtester
 
 
-def make_df(closes, highs=None, lows=None, interval='5m'):
+def make_df(closes, highs=None, lows=None, interval='5min'):
     """Create DataFrame from price arrays."""
     n = len(closes)
     if highs is None:
@@ -87,7 +87,10 @@ def test_pure_uptrend():
     params = StrategyParams(bb_timeperiod=20, bb_nbdevup=2.0, bb_nbdevdn=2.0)
     stats, trades = bt.run(df, 'basic', params)
 
-    # In pure uptrend, price stays above upper band → may trigger BUY
+    # A linear ramp never closes above its own upper band (the SMA lags by less
+    # than 2 sigma), so this only checks direction consistency and accounting.
+    assert all(t.side == 'LONG' for t in trades)
+    assert abs(stats.final_capital - (100000 + sum(t.pnl for t in trades))) < 1e-6
     print(f"PASS: test_pure_uptrend — {stats.total_trades} trades, return={stats.total_return_pct:+.2f}%")
 
 
@@ -102,6 +105,8 @@ def test_pure_downtrend():
     params = StrategyParams(bb_timeperiod=20, bb_nbdevup=2.0, bb_nbdevdn=2.0)
     stats, trades = bt.run(df, 'basic', params)
 
+    assert all(t.side == 'SHORT' for t in trades)
+    assert abs(stats.final_capital - (100000 + sum(t.pnl for t in trades))) < 1e-6
     print(f"PASS: test_pure_downtrend — {stats.total_trades} trades, return={stats.total_return_pct:+.2f}%")
 
 
@@ -118,11 +123,12 @@ def test_sl_tp_hit():
                             stop_loss_multiplier=1.5, take_profit_multiplier=3.0)
     stats, trades = bt.run(df, 'basic', params)
 
-    if trades:
-        reasons = [t.exit_reason for t in trades]
-        print(f"PASS: test_sl_tp_hit — {stats.total_trades} trades, reasons: {reasons}")
-    else:
-        print(f"PASS: test_sl_tp_hit — 0 trades (no signal in test data)")
+    allowed = {'STOP_LOSS', 'TAKE_PROFIT', 'SIGNAL_BUY', 'SIGNAL_SELL', 'END_OF_DATA'}
+    assert stats.total_trades >= 1, "the crafted spike must produce at least one trade"
+    assert {t.exit_reason for t in trades} <= allowed
+    for t in trades:
+        assert t.entry_time < t.exit_time
+    print(f"PASS: test_sl_tp_hit — {stats.total_trades} trades, reasons: {[t.exit_reason for t in trades]}")
 
 
 def test_all_variants():
@@ -139,11 +145,9 @@ def test_all_variants():
     bt = Backtester(initial_capital=100000, risk_pct=0.01, max_leverage=20)
 
     for variant in ['basic', 'rsi_filter', 'squeeze', 'mean_reversion']:
-        try:
-            stats, trades = bt.run(df, variant, params)
-            print(f"PASS: variant '{variant}' — {stats.total_trades} trades, return={stats.total_return_pct:+.2f}%")
-        except Exception as e:
-            print(f"FAIL: variant '{variant}' — {e}")
+        stats, trades = bt.run(df, variant, params)  # any exception fails the test
+        assert abs(stats.final_capital - (100000 + sum(t.pnl for t in trades))) < 1e-6
+        print(f"PASS: variant '{variant}' — {stats.total_trades} trades, return={stats.total_return_pct:+.2f}%")
 
 
 if __name__ == '__main__':
