@@ -75,23 +75,60 @@ class BacktestStats:
     short_win_rate: float = 0.0
 
 
+FUNDING_INTERVAL_HOURS = 8.0
+
+_BARS_PER_YEAR = {
+    '1m': 525600, '3m': 175200, '5m': 105120, '15m': 35040, '30m': 17520,
+    '1h': 8760, '2h': 4380, '4h': 2190, '6h': 1460, '8h': 1095, '12h': 730,
+    '1d': 365, '3d': 122, '1w': 52,
+}
+
+
+def interval_bars_per_year(interval: str) -> int:
+    if interval not in _BARS_PER_YEAR:
+        raise ValueError(f"Unsupported interval: {interval}")
+    return _BARS_PER_YEAR[interval]
+
+
 class Backtester:
     def __init__(self, initial_capital: float = 100000,
                  risk_pct: float = 0.01,
                  max_leverage: int = 20,
-                 commission_rate: float = 0.0004,
+                 commission_rate: float = 0.00055,
                  slippage_rate: float = 0.0002,
                  funding_rate: float = 0.0001,
-                 funding_interval_bars: int = 8,
-                 bars_per_year: int = 8760):
+                 funding_interval_bars: Optional[float] = None,
+                 bars_per_year: Optional[int] = None,
+                 interval: Optional[str] = None):
+        """Bar-by-bar backtester.
+
+        Cost model (each cost is counted exactly once):
+          * slippage is applied to the fill prices (entry and exit), so it is
+            already inside gross PnL. Trade.slippage_cost is informational.
+          * commission is charged on notional at entry and exit.
+          * funding is charged as a cost on full notional for every 8h period
+            held (conservative: it ignores that shorts receive funding when
+            the rate is positive).
+
+        Pass ``interval`` (e.g. '1h', '5m') so funding periods and Sharpe
+        annualisation match the bar size. Explicit ``funding_interval_bars``
+        or ``bars_per_year`` override the values derived from ``interval``.
+        """
         self.initial_capital = initial_capital
         self.risk_pct = risk_pct
         self.max_leverage = max_leverage
         self.commission_rate = commission_rate
         self.slippage_rate = slippage_rate
         self.funding_rate = funding_rate
+        if interval is not None:
+            derived_bars_per_year = interval_bars_per_year(interval)
+        else:
+            derived_bars_per_year = 8760
+        self.bars_per_year = bars_per_year if bars_per_year is not None else derived_bars_per_year
+        if funding_interval_bars is None:
+            bar_hours = 8760.0 / self.bars_per_year
+            funding_interval_bars = FUNDING_INTERVAL_HOURS / bar_hours
         self.funding_interval_bars = funding_interval_bars
-        self.bars_per_year = bars_per_year
 
     def run(self, df: pd.DataFrame, strategy_variant: str = 'basic',
             params: Optional[StrategyParams] = None) -> tuple[BacktestStats, list[Trade]]:
@@ -124,7 +161,7 @@ class Backtester:
         max_notional = capital * self.max_leverage
         notional = min(notional_by_risk, max_notional)
         quantity = notional / entry_price
-        slippage_cost = notional * self.slippage_rate
+        slippage_cost = notional * self.slippage_rate  # informational: already inside entry_price
         commission = notional * self.commission_rate
 
         return {
@@ -144,7 +181,7 @@ class Backtester:
     def _close_position(self, position, exit_price, timestamp, reason, bars_held):
         notional = position['notional']
         quantity = position['quantity']
-        exit_slippage = notional * self.slippage_rate
+        exit_slippage = notional * self.slippage_rate  # informational: already inside exit_price
         exit_commission = notional * self.commission_rate
 
         if position['side'] == 'LONG':
@@ -160,7 +197,8 @@ class Backtester:
 
         total_commission = position['entry_commission'] + exit_commission
         total_slippage = position['entry_slippage'] + exit_slippage
-        total_costs = total_commission + total_slippage + funding_cost
+        # Slippage is already reflected in entry/exit prices; do not subtract it again.
+        total_costs = total_commission + funding_cost
         net_pnl = gross_pnl - total_costs
         pnl_pct = gross_pnl / notional * 100 if notional > 0 else 0
         duration_hours = (timestamp - position['entry_time']).total_seconds() / 3600
@@ -235,6 +273,11 @@ class Backtester:
                 exit_price, exit_reason = close, 'SIGNAL_BUY'
 
         if exit_price is not None:
+            # Exits are market orders: the fill is worse than the trigger level.
+            if position['side'] == 'LONG':
+                exit_price *= (1 - self.slippage_rate)
+            else:
+                exit_price *= (1 + self.slippage_rate)
             trade = self._close_position(position, exit_price, timestamp, exit_reason, bars_held)
             return trade, trade.pnl
         return None, 0
@@ -285,6 +328,7 @@ class Backtester:
             trade = self._close_position(position, exit_price, df.index[-1], 'END_OF_DATA', bars_held)
             trades.append(trade)
             capital += trade.pnl
+            equity_curve[-1] = capital  # final point includes exit costs
 
         return self._compute_stats(trades, equity_curve), trades
 
@@ -336,6 +380,7 @@ class Backtester:
             trade = self._close_position(position, exit_price, df.index[-1], 'END_OF_DATA', bars_held)
             trades.append(trade)
             capital += trade.pnl
+            equity_curve[-1] = capital  # final point includes exit costs
 
         return self._compute_stats(trades, equity_curve), trades
 
@@ -385,6 +430,7 @@ class Backtester:
             trade = self._close_position(position, exit_price, df.index[-1], 'END_OF_DATA', bars_held)
             trades.append(trade)
             capital += trade.pnl
+            equity_curve[-1] = capital  # final point includes exit costs
 
         return self._compute_stats(trades, equity_curve), trades
 
@@ -403,6 +449,7 @@ class Backtester:
             low = df['Low'].iloc[i]
             timestamp = df.index[i]
 
+            side_before = core.position_side
             signal = core.update(close, upper[i], middle[i], lower[i])
 
             if position is not None:
@@ -411,8 +458,13 @@ class Backtester:
                     trades.append(trade)
                     capital += pnl
                     position = None
+                    # SL/TP/signal exits all leave the strategy flat.
+                    core.position_side = 0
 
-            if position is None and capital > 0:
+            # An exit signal (emitted while the strategy held a position) must
+            # not be reinterpreted as a fresh entry on the same bar.
+            entry_allowed = (side_before == 0)
+            if position is None and capital > 0 and entry_allowed:
                 if signal == Signal.BUY:
                     entry_price = close * (1 + self.slippage_rate)
                     sl = entry_price * (1 - params.stop_loss_multiplier * (upper[i] - lower[i]) / 2 / entry_price)
@@ -426,6 +478,9 @@ class Backtester:
                     position = self._open_position(entry_price, timestamp, 'SHORT', sl, tp, capital)
                     entry_bar = i
 
+            if position is None:
+                core.position_side = 0  # e.g. entry skipped because capital <= 0
+
             equity_curve.append(capital + self._unrealized_pnl(position, close) if position else capital)
 
         if position is not None:
@@ -434,6 +489,7 @@ class Backtester:
             trade = self._close_position(position, exit_price, df.index[-1], 'END_OF_DATA', bars_held)
             trades.append(trade)
             capital += trade.pnl
+            equity_curve[-1] = capital  # final point includes exit costs
 
         return self._compute_stats(trades, equity_curve), trades
 
@@ -447,6 +503,10 @@ class Backtester:
             return stats
 
         stats.final_capital = equity_curve[-1] if equity_curve else self.initial_capital
+        # Accounting identity: no open positions and no external flows at the end.
+        expected_final = self.initial_capital + sum(t.pnl for t in trades)
+        assert abs(stats.final_capital - expected_final) < 1e-6 * max(1.0, abs(expected_final)), (
+            f"equity {stats.final_capital} != initial + sum(trade pnl) {expected_final}")
         stats.total_return_pct = (stats.final_capital - self.initial_capital) / self.initial_capital * 100
 
         peak = equity_curve[0]

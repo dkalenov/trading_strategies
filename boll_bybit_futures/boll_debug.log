@@ -1,0 +1,364 @@
+
+======================================================================
+  Bollinger Bands Live — COREUSDT 1m
+======================================================================
+  Mode:       DRY RUN (testnet)
+  Data:       mainnet (real prices)
+  Variant:    basic
+  BB:         (30, 2.0, 2.0)
+  TP/SL:      4.0x / 1.5x BB width
+  Leverage:   10x
+  Risk/Trade: 1.0%
+  DEBUG:      ON (force open on every candle)
+======================================================================
+  Filters: step=0.1, tick=1e-05, min_qty=0.1, min_notional=5.0
+  Warmup: 100 bars, close=0.02, BB=(0.02/0.02/0.02), width=0.00
+
+  Waiting for signals... (Ctrl+C to stop)
+
+  WS connected: kline.1.COREUSDT
+  [13:59:01] [DEBUG] Buy @ 0.02
+  [14:00:01] [DEBUG] Sell @ 0.02
+  [14:01:01] [DEBUG] Buy @ 0.02
+  [14:02:01] [DEBUG] Sell @ 0.02
+  [14:03:01] [DEBUG] Buy @ 0.02
+  [14:04:02] [DEBUG] Sell @ 0.02
+  [14:05:01] [DEBUG] Buy @ 0.02
+  [14:06:01] [DEBUG] Sell @ 0.02
+  [14:07:01] [DEBUG] Buy @ 0.02
+  [14:08:01] [DEBUG] Sell @ 0.02
+  [14:09:01] [DEBUG] Buy @ 0.02
+  [14:10:01] [DEBUG] Sell @ 0.02
+  [14:11:01] [DEBUG] Buy @ 0.02
+  [14:12:01] [DEBUG] Sell @ 0.02
+
+  [14:12:06] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.21%)
+    TP:        0.02 (0.55%)
+    Quantity:  813890.3
+    Notional:  $15000.00
+    BB Width:  0.00
+  [14:13:01] [DEBUG] Buy @ 0.02
+  [14:14:01] [DEBUG] Sell @ 0.02
+  [14:15:01] [DEBUG] Buy @ 0.02
+  [14:16:01] [DEBUG] Sell @ 0.02
+  [14:17:01] [DEBUG] Buy @ 0.02
+  [14:18:01] [DEBUG] Sell @ 0.02
+  [14:19:01] [DEBUG] Buy @ 0.02
+  [14:20:01] [DEBUG] Sell @ 0.02
+  [14:21:01] [DEBUG] Buy @ 0.02
+  [14:22:01] [DEBUG] Sell @ 0.02
+
+  [14:22:24] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.24%)
+    TP:        0.02 (0.65%)
+    Quantity:  814332.2
+    Notional:  $15000.00
+    BB Width:  0.00
+  [14:23:01] [DEBUG] Buy @ 0.02
+
+  [14:23:16] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.27%)
+    TP:        0.02 (0.72%)
+    Quantity:  814774.5
+    Notional:  $15000.00
+    BB Width:  0.00
+  [14:24:01] [DEBUG] Sell @ 0.02
+  [14:25:01] [DEBUG] Buy @ 0.02
+  [14:26:01] [DEBUG] Sell @ 0.02
+
+  [14:26:09] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.33%)
+    TP:        0.02 (0.87%)
+    Quantity:  815217.3
+    Notional:  $15000.00
+    BB Width:  0.00
+  [14:27:01] [DEBUG] Buy @ 0.02
+  [14:28:01] [DEBUG] Sell @ 0.02
+  [14:29:01] [DEBUG] Buy @ 0.02
+  [14:30:01] [DEBUG] Sell @ 0.02
+  [14:31:01] [DEBUG] Buy @ 0.02
+
+  [14:31:12] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.34%)
+    TP:        0.02 (0.92%)
+    Quantity:  815217.3
+    Notional:  $15000.00
+    BB Width:  0.00
+  [14:32:01] [DEBUG] Sell @ 0.02
+  [14:33:01] [DEBUG] Buy @ 0.02
+  [14:34:01] [DEBUG] Sell @ 0.02
+  [14:35:01] [DEBUG] Buy @ 0.02
+  [14:36:01] [DEBUG] Sell @ 0.02
+  [14:37:01] [DEBUG] Buy @ 0.02
+  [14:38:01] [DEBUG] Sell @ 0.02
+  [14:39:01] [DEBUG] Buy @ 0.02
+  [14:40:01] [DEBUG] Sell @ 0.02
+  [14:41:01] [DEBUG] Buy @ 0.02
+  [14:42:01] [DEBUG] Sell @ 0.02
+
+  [14:42:07] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.32%)
+    TP:        0.02 (0.86%)
+    Quantity:  815660.6
+    Notional:  $15000.00
+    BB Width:  0.00
+  [14:43:01] [DEBUG] Buy @ 0.02
+  [14:44:01] [DEBUG] Sell @ 0.02
+  [14:45:01] [DEBUG] Buy @ 0.02
+  [14:46:01] [DEBUG] Sell @ 0.02
+  [14:47:01] [DEBUG] Buy @ 0.02
+  [14:48:01] [DEBUG] Sell @ 0.02
+  [14:49:01] [DEBUG] Buy @ 0.02
+  [14:50:01] [DEBUG] Sell @ 0.02
+  [14:51:01] [DEBUG] Buy @ 0.02
+  [14:52:01] [DEBUG] Sell @ 0.02
+  [14:53:01] [DEBUG] Buy @ 0.02
+  [14:54:01] [DEBUG] Sell @ 0.02
+  [14:55:01] [DEBUG] Buy @ 0.02
+  [14:56:01] [DEBUG] Sell @ 0.02
+
+  [14:56:49] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.34%)
+    TP:        0.02 (0.92%)
+    Quantity:  816104.4
+    Notional:  $15000.00
+    BB Width:  0.00
+  [14:57:01] [DEBUG] Buy @ 0.02
+  [14:58:01] [DEBUG] Sell @ 0.02
+  [14:59:01] [DEBUG] Buy @ 0.02
+  [15:00:01] [DEBUG] Sell @ 0.02
+  [15:01:01] [DEBUG] Buy @ 0.02
+  [15:02:01] [DEBUG] Sell @ 0.02
+
+  [15:02:33] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.44%)
+    TP:        0.02 (1.17%)
+    Quantity:  817438.6
+    Notional:  $15000.00
+    BB Width:  0.00
+  [15:03:01] [DEBUG] Buy @ 0.02
+  [15:04:01] [DEBUG] Sell @ 0.02
+
+  [15:04:36] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.55%)
+    TP:        0.02 (1.48%)
+    Quantity:  818330.6
+    Notional:  $15000.00
+    BB Width:  0.00
+  [15:05:01] [DEBUG] Buy @ 0.02
+  [15:06:01] [DEBUG] Sell @ 0.02
+
+  [15:06:36] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.60%)
+    TP:        0.02 (1.60%)
+    Quantity:  818777.2
+    Notional:  $15000.00
+    BB Width:  0.00
+  [15:07:01] [DEBUG] Buy @ 0.02
+  [15:08:01] [DEBUG] Sell @ 0.02
+
+  [15:08:03] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.62%)
+    TP:        0.02 (1.66%)
+    Quantity:  819224.4
+    Notional:  $15000.00
+    BB Width:  0.00
+  [15:09:01] [DEBUG] Buy @ 0.02
+
+  [15:09:46] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.64%)
+    TP:        0.02 (1.70%)
+    Quantity:  819672.1
+    Notional:  $15000.00
+    BB Width:  0.00
+  [15:10:01] [DEBUG] Sell @ 0.02
+  [15:11:01] [DEBUG] Buy @ 0.02
+  [15:12:01] [DEBUG] Sell @ 0.02
+  [15:13:01] [DEBUG] Buy @ 0.02
+  [15:14:01] [DEBUG] Sell @ 0.02
+  [15:15:01] [DEBUG] Buy @ 0.02
+  [15:16:01] [DEBUG] Sell @ 0.02
+  [15:17:01] [DEBUG] Buy @ 0.02
+  [15:18:01] [DEBUG] Sell @ 0.02
+  [15:19:01] [DEBUG] Buy @ 0.02
+  [15:20:01] [DEBUG] Sell @ 0.02
+  [15:21:01] [DEBUG] Buy @ 0.02
+  [15:22:01] [DEBUG] Sell @ 0.02
+  [15:23:01] [DEBUG] Buy @ 0.02
+  [15:24:01] [DEBUG] Sell @ 0.02
+  [15:25:01] [DEBUG] Buy @ 0.02
+  [15:26:01] [DEBUG] Sell @ 0.02
+  [15:27:01] [DEBUG] Buy @ 0.02
+  [15:28:01] [DEBUG] Sell @ 0.02
+  [15:29:01] [DEBUG] Buy @ 0.02
+  [15:30:01] [DEBUG] Sell @ 0.02
+  [15:31:01] [DEBUG] Buy @ 0.02
+  [15:32:01] [DEBUG] Sell @ 0.02
+  [15:33:01] [DEBUG] Buy @ 0.02
+
+  [15:33:08] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.18%)
+    TP:        0.02 (0.49%)
+    Quantity:  819672.1
+    Notional:  $15000.00
+    BB Width:  0.00
+  [15:34:01] [DEBUG] Sell @ 0.02
+  [15:35:01] [DEBUG] Buy @ 0.02
+  [15:36:01] [DEBUG] Sell @ 0.02
+  [15:37:01] [DEBUG] Buy @ 0.02
+  [15:38:01] [DEBUG] Sell @ 0.02
+  [15:39:01] [DEBUG] Buy @ 0.02
+  [15:40:01] [DEBUG] Sell @ 0.02
+  [15:41:01] [DEBUG] Buy @ 0.02
+  [15:42:01] [DEBUG] Sell @ 0.02
+  [15:43:01] [DEBUG] Buy @ 0.02
+  [15:44:01] [DEBUG] Sell @ 0.02
+  [15:45:01] [DEBUG] Buy @ 0.02
+  [15:46:01] [DEBUG] Sell @ 0.02
+  [15:47:01] [DEBUG] Buy @ 0.02
+  [15:48:01] [DEBUG] Sell @ 0.02
+  [15:49:01] [DEBUG] Buy @ 0.02
+  [15:50:01] [DEBUG] Sell @ 0.02
+  [15:51:01] [DEBUG] Buy @ 0.02
+
+  [15:51:34] Buy SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.27%)
+    TP:        0.02 (0.72%)
+    Quantity:  817438.6
+    Notional:  $15000.00
+    BB Width:  0.00
+  [15:52:01] [DEBUG] Sell @ 0.02
+  [15:53:01] [DEBUG] Buy @ 0.02
+  [15:54:01] [DEBUG] Sell @ 0.02
+  [15:55:01] [DEBUG] Buy @ 0.02
+  [15:56:01] [DEBUG] Sell @ 0.02
+  [15:57:01] [DEBUG] Buy @ 0.02
+  [15:58:01] [DEBUG] Sell @ 0.02
+  [15:59:01] [DEBUG] Buy @ 0.02
+  WS error: [WinError 10054] An existing connection was forcibly closed by the remote host
+  WS closed
+  WS reconnecting in 5s...
+  WS connected: kline.1.COREUSDT
+  [16:00:03] [DEBUG] Sell @ 0.02
+  [16:01:01] [DEBUG] Buy @ 0.02
+  [16:02:02] [DEBUG] Sell @ 0.02
+  [16:03:01] [DEBUG] Buy @ 0.02
+  [16:04:01] [DEBUG] Sell @ 0.02
+  [16:05:01] [DEBUG] Buy @ 0.02
+  [16:06:01] [DEBUG] Sell @ 0.02
+
+  [16:06:03] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.29%)
+    TP:        0.02 (0.78%)
+    Quantity:  825991.1
+    Notional:  $15000.00
+    BB Width:  0.00
+  [16:07:01] [DEBUG] Buy @ 0.02
+  [16:08:01] [DEBUG] Sell @ 0.02
+  [16:09:01] [DEBUG] Buy @ 0.02
+
+  [16:09:40] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.56%)
+    TP:        0.02 (1.50%)
+    Quantity:  822819.5
+    Notional:  $15000.00
+    BB Width:  0.00
+  [16:10:01] [DEBUG] Sell @ 0.02
+  WS error: [WinError 10054] An existing connection was forcibly closed by the remote host
+  WS closed
+  WS reconnecting in 5s...
+  WS connected: kline.1.COREUSDT
+  [16:11:01] [DEBUG] Buy @ 0.02
+
+  [16:11:09] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.67%)
+    TP:        0.02 (1.78%)
+    Quantity:  824628.9
+    Notional:  $15000.00
+    BB Width:  0.00
+  [16:12:01] [DEBUG] Sell @ 0.02
+  [16:13:01] [DEBUG] Buy @ 0.02
+  [16:14:01] [DEBUG] Sell @ 0.02
+  [16:15:01] [DEBUG] Buy @ 0.02
+  [16:16:01] [DEBUG] Sell @ 0.02
+  [16:17:01] [DEBUG] Buy @ 0.02
+  [16:18:01] [DEBUG] Sell @ 0.02
+  [16:19:01] [DEBUG] Buy @ 0.02
+  [16:20:01] [DEBUG] Sell @ 0.02
+  [16:21:01] [DEBUG] Buy @ 0.02
+  [16:22:01] [DEBUG] Sell @ 0.02
+  [16:23:01] [DEBUG] Buy @ 0.02
+  [16:24:01] [DEBUG] Sell @ 0.02
+  [16:25:01] [DEBUG] Buy @ 0.02
+  [16:26:01] [DEBUG] Sell @ 0.02
+  [16:27:01] [DEBUG] Buy @ 0.02
+  [16:28:01] [DEBUG] Sell @ 0.02
+  [16:29:01] [DEBUG] Buy @ 0.02
+
+  [16:29:48] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (0.55%)
+    TP:        0.02 (1.48%)
+    Quantity:  825991.1
+    Notional:  $15000.00
+    BB Width:  0.00
+  [16:30:01] [DEBUG] Sell @ 0.02
+
+  [16:30:09] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (1.27%)
+    TP:        0.02 (3.38%)
+    Quantity:  830564.7
+    Notional:  $15000.00
+    BB Width:  0.00
+  [16:31:01] [DEBUG] Buy @ 0.02
+
+  [16:31:20] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (1.13%)
+    TP:        0.02 (3.01%)
+    Quantity:  830105.1
+    Notional:  $15000.00
+    BB Width:  0.00
+
+  [16:31:44] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (1.13%)
+    TP:        0.02 (3.01%)
+    Quantity:  830105.1
+    Notional:  $15000.00
+    BB Width:  0.00
+  [16:32:01] [DEBUG] Sell @ 0.02
+
+  [16:32:20] Sell SIGNAL
+    Entry:     0.02
+    SL:        0.02 (1.17%)
+    TP:        0.02 (3.12%)
+    Quantity:  830564.7
+    Notional:  $15000.00
+    BB Width:  0.00
+  [16:33:01] [DEBUG] Buy @ 0.02
+  [16:34:01] [DEBUG] Sell @ 0.02
+  [16:35:01] [DEBUG] Buy @ 0.02
+  [16:36:01] [DEBUG] Sell @ 0.02
+  [16:37:01] [DEBUG] Buy @ 0.02
+  [16:38:01] [DEBUG] Sell @ 0.02
+  [16:39:01] [DEBUG] Buy @ 0.02

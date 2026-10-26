@@ -51,6 +51,7 @@ def backtest_symbol(symbol, config, params, variant='basic'):
             commission_rate=config.commission,
             slippage_rate=config.slippage,
             funding_rate=config.funding_rate,
+            interval=config.interval,
         )
 
         stats, trades = backtester.run(df, variant, params)
