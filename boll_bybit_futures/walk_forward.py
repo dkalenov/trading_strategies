@@ -104,7 +104,6 @@ def optimize_on_train(df_train: pd.DataFrame, strategy_variant: str,
             commission_rate=0.00055,  # Bybit standard non-VIP taker fee
             slippage_rate=0.0002,
             funding_rate=0.0001,
-            funding_interval_bars=8,
             max_leverage=20,
             bars_per_year=bars_per_year,
         )
@@ -142,7 +141,6 @@ def run_single_window(df_train, df_test, strategy_variant, params, bars_per_year
         commission_rate=0.00055,  # Bybit standard non-VIP taker fee
         slippage_rate=0.0002,
         funding_rate=0.0001,
-        funding_interval_bars=8,
         max_leverage=20,
         bars_per_year=bars_per_year,
     )
@@ -207,6 +205,11 @@ def walk_forward(symbol: str, interval: str, start_date: str, end_date: str,
 
         df_train = df_full[train_start:train_end].copy()
         df_test = df_full[test_start:test_end].copy()
+        # Out-of-sample must be strictly after in-sample: fail loudly, never silently overlap.
+        assert df_train.index.intersection(df_test.index).empty, (
+            f"train/test overlap in window {train_start}..{train_end} / {test_start}..{test_end}")
+        if len(df_train) and len(df_test):
+            assert df_train.index.max() < df_test.index.min(), "test window starts before train ends"
 
         if len(df_train) < 200:
             if verbose:
@@ -241,7 +244,7 @@ def walk_forward(symbol: str, interval: str, start_date: str, end_date: str,
 
         default_bt = Backtester(
             initial_capital=100000, risk_pct=0.01, commission_rate=0.00055,  # Bybit standard non-VIP taker fee
-            slippage_rate=0.0002, funding_rate=0.0001, funding_interval_bars=8,
+            slippage_rate=0.0002, funding_rate=0.0001,
             max_leverage=20, bars_per_year=bars_per_year,
         )
         default_params = StrategyParams()
@@ -408,8 +411,10 @@ def main():
     parser.add_argument('--step-months', type=int, default=3)
     parser.add_argument('--max-evals', type=int, default=100)
     parser.add_argument('--output', default=None, help='Save results to JSON')
+    parser.add_argument('--seed', type=int, default=42, help='random seed for the parameter search')
 
     args = parser.parse_args()
+    np.random.seed(args.seed)
 
     results = walk_forward(
         args.symbol, args.interval, args.start, args.end,
