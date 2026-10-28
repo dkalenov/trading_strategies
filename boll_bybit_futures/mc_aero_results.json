@@ -1,0 +1,80 @@
+{
+  "symbol": "AEROUSDT",
+  "interval": "1h",
+  "strategy": "basic",
+  "original_stats": {
+    "return_pct": 61.85,
+    "sharpe": 2.47,
+    "max_drawdown": 12.7,
+    "win_rate": 43.9,
+    "trades": 253
+  },
+  "permutation_test": {
+    "n_simulations": 10000,
+    "n_trades": 253,
+    "original_return": 33123.47,
+    "final_capital": {
+      "mean": 33223467.47,
+      "median": 33204231.11,
+      "std": 2061616.54,
+      "p5": 29818871.88,
+      "p25": 31835809.68,
+      "p75": 34612166.16,
+      "p95": 36646390.2,
+      "min": 25554257.11,
+      "max": 40580520.99,
+      "prob_profit": 100.0
+    },
+    "max_drawdown": {
+      "mean": 0.0,
+      "median": 0.0,
+      "p5": 0.0,
+      "p95": 0.0
+    },
+    "sharpe_ratio": {
+      "mean": 30.709,
+      "median": 30.732,
+      "p5": 29.958,
+      "p95": 31.39,
+      "prob_positive": 100.0
+    }
+  },
+  "bootstrap_50": {
+    "n_simulations": 10000,
+    "sample_pct": 0.5,
+    "sample_size": 126,
+    "return_pct": {
+      "mean": 30.61,
+      "median": 30.7,
+      "std": 19.73,
+      "p5": -1.73,
+      "p95": 63.65,
+      "prob_profit": 94.0
+    },
+    "win_rate": {
+      "mean": 43.9,
+      "median": 43.7,
+      "p5": 36.5,
+      "p95": 51.6
+    }
+  },
+  "bootstrap_100": {
+    "n_simulations": 10000,
+    "sample_pct": 1.0,
+    "sample_size": 253,
+    "return_pct": {
+      "mean": 62.15,
+      "median": 61.92,
+      "std": 27.92,
+      "p5": 16.23,
+      "p95": 108.73,
+      "prob_profit": 98.7
+    },
+    "win_rate": {
+      "mean": 43.9,
+      "median": 43.9,
+      "p5": 38.7,
+      "p95": 49.0
+    }
+  }
+}

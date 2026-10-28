@@ -1,0 +1,80 @@
+{
+  "symbol": "COREUSDT",
+  "interval": "1h",
+  "strategy": "basic",
+  "original_stats": {
+    "return_pct": 136.36,
+    "sharpe": 2.733,
+    "max_drawdown": 12.13,
+    "win_rate": 40.7,
+    "trades": 432
+  },
+  "permutation_test": {
+    "n_simulations": 10000,
+    "n_trades": 432,
+    "original_return": 72717.24,
+    "final_capital": {
+      "mean": 72817244.89,
+      "median": 72922363.72,
+      "std": 5786577.46,
+      "p5": 63188554.38,
+      "p25": 68875297.97,
+      "p75": 76764493.99,
+      "p95": 82153128.46,
+      "min": 48663143.74,
+      "max": 92205448.73,
+      "prob_profit": 100.0
+    },
+    "max_drawdown": {
+      "mean": 0.0,
+      "median": 0.0,
+      "p5": 0.0,
+      "p95": 0.0
+    },
+    "sharpe_ratio": {
+      "mean": 25.965,
+      "median": 26.002,
+      "p5": 25.166,
+      "p95": 26.682,
+      "prob_positive": 100.0
+    }
+  },
+  "bootstrap_50": {
+    "n_simulations": 10000,
+    "sample_pct": 0.5,
+    "sample_size": 216,
+    "return_pct": {
+      "mean": 68.38,
+      "median": 67.79,
+      "std": 32.42,
+      "p5": 15.95,
+      "p95": 121.79,
+      "prob_profit": 98.3
+    },
+    "win_rate": {
+      "mean": 40.8,
+      "median": 40.7,
+      "p5": 35.2,
+      "p95": 46.3
+    }
+  },
+  "bootstrap_100": {
+    "n_simulations": 10000,
+    "sample_pct": 1.0,
+    "sample_size": 432,
+    "return_pct": {
+      "mean": 136.45,
+      "median": 136.65,
+      "std": 46.3,
+      "p5": 60.36,
+      "p95": 212.87,
+      "prob_profit": 99.9
+    },
+    "win_rate": {
+      "mean": 40.8,
+      "median": 40.7,
+      "p5": 36.8,
+      "p95": 44.7
+    }
+  }
+}
