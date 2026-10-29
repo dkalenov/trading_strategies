@@ -304,7 +304,7 @@ If you want to build a production bot based on this strategy:
 - Graceful shutdown
 
 ### 5. Consider Using Algofactory Framework
-The parent repository includes `algofactory_bot/` — a production-ready framework with:
+The parent repository includes `algofactory_bot/` - a production-ready framework with:
 - ATR-based position sizing
 - 2 take-profit levels with breakeven stop
 - Trailing stop
