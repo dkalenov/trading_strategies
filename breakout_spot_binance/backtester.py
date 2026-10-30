@@ -49,7 +49,8 @@ class BacktestStats:
     max_drawdown_duration_bars: int = 0
     sharpe_ratio: float = 0.0
     sortino_ratio: float = 0.0
-    calmar_ratio: float = 0.0
+    calmar_ratio: float = 0.0          # annualized return / max drawdown
+    return_over_maxdd: float = 0.0     # total return / max drawdown (not annualized)
     win_rate: float = 0.0
     total_trades: int = 0
     winning_trades: int = 0
@@ -117,11 +118,13 @@ class Backtester:
         gross_pnl = (exit_price - position['entry_price']) * quantity
 
         total_commission = position['entry_commission'] + exit_commission
+        # Slippage is already inside entry_price / exit_price (they are worse than
+        # the reference price), so it is reported but not subtracted a second time.
         total_slippage = position['entry_slippage'] + exit_slippage
-        total_costs = total_commission + total_slippage
+        total_costs = total_commission
 
         net_pnl = gross_pnl - total_costs
-        pnl_pct = gross_pnl / notional * 100 if notional > 0 else 0
+        pnl_pct = net_pnl / notional * 100 if notional > 0 else 0  # net, consistent with is_winner
 
         return Trade(
             entry_time=position['entry_time'],
@@ -227,6 +230,7 @@ class Backtester:
             trade = self._close_position(position, exit_price, df.index[-1], 'END_OF_DATA', bars_held)
             trades.append(trade)
             capital += trade.pnl
+            equity_curve[-1] = capital  # final equity includes the closing costs
 
         return self._compute_stats(trades, equity_curve), trades
 
@@ -266,11 +270,16 @@ class Backtester:
         if len(returns) > 1 and np.std(returns) > 0:
             ann = np.sqrt(self.bars_per_year)
             stats.sharpe_ratio = np.mean(returns) / np.std(returns) * ann
-            neg_returns = [r for r in returns if r < 0]
-            if neg_returns and np.std(neg_returns) > 0:
-                stats.sortino_ratio = np.mean(returns) / np.std(neg_returns) * ann
+            # Standard downside deviation: RMS of min(r, 0) over ALL returns.
+            downside = np.sqrt(np.mean(np.minimum(np.array(returns), 0.0) ** 2))
+            if downside > 0:
+                stats.sortino_ratio = np.mean(returns) / downside * ann
         if stats.max_drawdown_pct > 0:
-            stats.calmar_ratio = stats.total_return_pct / stats.max_drawdown_pct
+            stats.return_over_maxdd = stats.total_return_pct / stats.max_drawdown_pct
+            years = len(equity_curve) / self.bars_per_year
+            if years > 0 and stats.final_capital > 0:
+                ann_return_pct = ((stats.final_capital / self.initial_capital) ** (1 / years) - 1) * 100
+                stats.calmar_ratio = ann_return_pct / stats.max_drawdown_pct
 
         # Win/loss
         winners = [t for t in trades if t.is_winner]
