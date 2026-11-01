@@ -1,4 +1,4 @@
-# Bollinger Bands Bybit Futures — PROMPT_RESUME
+# Bollinger Bands Bybit Futures 
 
 ## Краткое описание проекта
 Полная инфраструктура бэктестинга + live trading бот для Bollinger Bands стратегии на Bybit Futures (USDT perpetual). Скопирована архитектура из UTBot_Strategy.
