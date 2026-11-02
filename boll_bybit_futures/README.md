@@ -210,7 +210,7 @@ funded account:
   evidence of a real edge - you'd need to validate that symbol's parameters
   on data the selection process never saw.
 - **Walk-forward windows are limited by how much history you have.** With
-  ~18 months of data and a 6–12 month training window, you only get a
+  ~18 months of data and a 6-12 month training window, you only get a
   handful of out-of-sample test windows. Treat a "2 out of 2 profitable
   windows" result as a weak signal, not proof of robustness - the sample
   size is tiny either way.
@@ -244,6 +244,4 @@ as one data point to interrogate, not a green light. If you do decide to
 run this live, start on testnet, then with real money only at a size you
 can afford to lose entirely, and monitor it closely.
 
-## License
 
-MIT - see `LICENSE`. Use at your own risk; see disclaimer above.
