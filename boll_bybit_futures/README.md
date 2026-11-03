@@ -19,7 +19,7 @@ WebSocket bot for Bybit's testnet.
 Bollinger Bands use a moving average ± a multiple of standard deviation as
 dynamic support/resistance:
 
-- Upper band = SMA + `nbdevup`×σ, Lower band = SMA − `nbdevdn`×σ
+- Upper band = SMA + `nbdevup`×σ, Lower band = SMA - `nbdevdn`×σ
 - **BUY** when price crosses above the upper band (breakout continuation)
 - **SELL** when price crosses below the lower band (breakdown continuation)
 - 4 variants ship with different entry/exit logic - see
