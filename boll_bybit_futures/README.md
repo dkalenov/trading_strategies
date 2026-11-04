@@ -117,13 +117,13 @@ destination are independent flags on purpose.
 ## Architecture
 
 ```
-REST API (klines, on startup)  ─→  warm up BB/RSI state from history
+REST API (klines, on startup)  →  warm up BB/RSI state from history
                                           │
-WebSocket: kline stream  ─→  on candle CLOSE (once per bar)  ─→  recompute
-                               BB/RSI  ─→  evaluate ONE signal  ─→  order
+WebSocket: kline stream  →  on candle CLOSE (once per bar)  →  recompute
+                               BB/RSI  →  evaluate ONE signal  →  order
                                           │
                                on every tick (in between closes)
-                               ─→  price display only, no signal logic
+                               →  price display only, no signal logic
                                           │
 REST API  ─→  market order (entry) + SL algo order + TP algo order
 ```
