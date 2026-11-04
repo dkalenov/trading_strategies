@@ -96,7 +96,8 @@ def print_stats(stats: BacktestStats, symbol: str):
     print(f"  Max Drawdown:       {stats.max_drawdown_pct:.2f}%")
     print(f"  Sharpe Ratio:       {stats.sharpe_ratio:.3f}")
     print(f"  Sortino Ratio:      {stats.sortino_ratio:.3f}")
-    print(f"  Calmar Ratio:       {stats.calmar_ratio:.3f}")
+    print(f"  Calmar Ratio:       {stats.calmar_ratio:.3f}  (annualized return / max DD)")
+    print(f"  Return / Max DD:    {stats.return_over_maxdd:.3f}")
     print(f"  Win Rate:           {stats.win_rate:.1f}% ({stats.winning_trades}W / {stats.losing_trades}L)")
     print(f"  Profit Factor:      {stats.profit_factor:.2f}")
     print(f"  Expectancy:         ${stats.expectancy:.2f}")
@@ -254,7 +255,7 @@ def run_optimization(config: Config, param_grid: dict = None,
         best_return_pct=best_return,
         best_params_json=json.dumps(best_params) if best_params else '{}',
         best_sharpe=best_sharpe,
-        best_max_drawdown_pct=max((r['max_drawdown'] for r in results), default=0),
+        best_max_drawdown_pct=next((r['max_drawdown'] for r in results if r['params'] == best_params), 0),  # drawdown of the selected config
         all_results_json=json.dumps(results[:200]),
     )
     db.save_optimization_result(opt_result)

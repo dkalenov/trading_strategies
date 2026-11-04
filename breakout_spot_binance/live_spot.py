@@ -123,6 +123,43 @@ def fmt_price(price: float, precision: int) -> str:
 
 # ── Time sync ─────────────────────────────────────────────────────────
 
+def klines_to_closed_frame(data: list) -> pd.DataFrame:
+    """Klines as a DataFrame, keeping only candles that have already closed.
+
+    Binance returns the still-forming candle as the last row; feeding it to the
+    strategy would mix a partial bar into every indicator.
+    """
+    now_ms = time.time() * 1000
+    rows = [k for k in data if k[6] <= now_ms]
+    df = pd.DataFrame(rows, columns=[
+        'Open time', 'Open', 'High', 'Low', 'Close', 'Volume',
+        'Close time', 'Quote volume', 'Trades', 'Taker buy base',
+        'Taker buy quote', 'Ignore'
+    ])
+    for col in ['Open', 'High', 'Low', 'Close', 'Volume', 'Quote volume']:
+        df[col] = df[col].astype(float)
+    return df
+
+
+def replay_and_get_signal(core, df: pd.DataFrame, atr_arr) -> Signal:
+    """Reset the core, replay every bar once, and return the signal of the last bar.
+
+    The last bar must be fed to the core exactly once: a second update() would
+    put that bar's own high into the resistance window, which makes
+    close > resistance impossible and silently disables all entries.
+    """
+    core.reset()
+    signal = Signal.HOLD
+    last_i = len(df) - 1
+    for i in range(len(df)):
+        if not np.isnan(atr_arr[i]):
+            s = core.update(df['High'].iloc[i], df['Low'].iloc[i],
+                            df['Close'].iloc[i], df['Quote volume'].iloc[i], atr_arr[i])
+            if i == last_i:
+                signal = s
+    return signal
+
+
 def sync_server_time(base_url: str = SPOT_BASE):
     global _server_time_offset
     try:
@@ -224,10 +261,12 @@ def place_stop_loss(symbol: str, quantity: float, stop_price: float,
                     tick_size: int, step_size: int,
                     base_url: str = SPOT_BASE) -> dict:
     stop_str = fmt_price(stop_price, tick_size)
+    # A limit equal to the trigger may never fill in a fast drop; leave a 0.5% buffer.
+    limit_str = fmt_price(stop_price * 0.995, tick_size)
     qty_str = fmt_qty(quantity, step_size)
     params = sign_request({
         'symbol': symbol, 'side': 'SELL', 'type': 'STOP_LOSS_LIMIT',
-        'quantity': qty_str, 'price': stop_str, 'stopPrice': stop_str,
+        'quantity': qty_str, 'price': limit_str, 'stopPrice': stop_str,
         'timeInForce': 'GTC',
         'timestamp': get_timestamp(),
     }, API_SECRET)
@@ -375,18 +414,20 @@ class PollingMarketData:
                 # Poll kline for candle close detection
                 resp = requests.get(
                     f"{self.base_url}/api/v3/klines",
-                    params={'symbol': self.symbol, 'interval': self.interval, 'limit': 2},
+                    params={'symbol': self.symbol, 'interval': self.interval, 'limit': 3},
                     timeout=5
                 )
                 if resp.status_code == 200:
-                    klines = resp.json()
-                    if klines:
-                        latest = klines[-1]
-                        close_time = latest[6]  # Close time
-                        is_closed = latest[6] <= time.time() * 1000
-                        if is_closed and close_time != self._last_close_time:
+                    # The last row is normally the candle still being formed.
+                    # Use the newest candle whose close time is already in the past.
+                    now_ms = time.time() * 1000
+                    closed = [k for k in resp.json() if k[6] <= now_ms]
+                    if closed:
+                        close_time = closed[-1][6]
+                        if close_time != self._last_close_time:
+                            if self._last_close_time:  # first poll only records the baseline
+                                self.on_candle_close()
                             self._last_close_time = close_time
-                            self.on_candle_close()
 
             except Exception as e:
                 print(f"  Poll error: {e}")
@@ -473,14 +514,7 @@ def run_live_spot(symbol='BTCUSDT', interval='4h',
     url = f"{base_url}/api/v3/klines"
     resp = requests.get(url, params={'symbol': symbol, 'interval': interval, 'limit': warmup_limit}, timeout=10)
     resp.raise_for_status()
-    data = resp.json()
-    df = pd.DataFrame(data, columns=[
-        'Open time', 'Open', 'High', 'Low', 'Close', 'Volume',
-        'Close time', 'Quote volume', 'Trades', 'Taker buy base',
-        'Taker buy quote', 'Ignore'
-    ])
-    for col in ['Open', 'High', 'Low', 'Close', 'Volume', 'Quote volume']:
-        df[col] = df[col].astype(float)
+    df = klines_to_closed_frame(resp.json())
 
     atr_arr = calculate_atr_from_df(df, atr_period)
     for i in range(len(df)):
@@ -537,6 +571,37 @@ def run_live_spot(symbol='BTCUSDT', interval='4h',
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
 
+    def close_position_market(ref_price):
+        """Sell the whole position at market.
+
+        Returns the fill price, or None if the position is still open. State
+        must only be cleared when this returns a price; a failed sell must not
+        make the bot forget a position it still holds.
+        """
+        if dry_run:
+            return ref_price
+        try:
+            cancel_all_orders(symbol, base_url)
+            order = place_market_sell(symbol, quantity, step_size, base_url)
+            executed = float(order.get('executedQty', 0) or 0)
+            quote = float(order.get('cummulativeQuoteQty', 0) or 0)
+            return quote / executed if executed > 0 and quote > 0 else ref_price
+        except Exception as e:
+            log_trade('SELL_ERROR', 'SELL', ref_price, quantity, 0, 0, 0, str(e))
+            try:
+                # The exchange-side stop may already have sold the position.
+                if get_symbol_balance(symbol, base_url) < max(filters.get('min_qty', 0) or 0, 1e-12):
+                    log_trade('EXTERNALLY_CLOSED', 'SELL', ref_price, quantity, 0, 0, 0,
+                              'no balance left to sell')
+                    return ref_price
+            except Exception as e2:
+                log_trade('BALANCE_CHECK_ERROR', '', 0, 0, 0, 0, 0, str(e2))
+            try:
+                place_stop_loss(symbol, quantity, stop_loss_price, tick_size, step_size, base_url)
+            except Exception:
+                pass
+            return None
+
     # ── Tick callback (every price update) ──
     def on_tick(close):
         nonlocal peak_price, position_open
@@ -551,21 +616,12 @@ def run_live_spot(symbol='BTCUSDT', interval='4h',
         # Check trailing stop
         trailing_stop = peak_price * (1 - trailing_stop_pct / 100)
         if close < trailing_stop and peak_price > entry_price:
-            ts = datetime.now().strftime('%H:%M:%S')
-            pnl = (close - entry_price) * quantity
-            log_trade('TRAILING_STOP', 'SELL', close, quantity, close * quantity, 0, pnl,
+            fill = close_position_market(close)
+            if fill is None:
+                return  # still holding: keep state, retry on the next tick
+            pnl = (fill - entry_price) * quantity
+            log_trade('TRAILING_STOP', 'SELL', fill, quantity, fill * quantity, 0, pnl,
                      f'peak={peak_price:.2f}')
-
-            if not dry_run:
-                try:
-                    cancel_all_orders(symbol, base_url)
-                    order = place_market_sell(symbol, quantity, step_size, base_url)
-                    actual_price = float(order.get('price', close))
-                    pnl = (actual_price - entry_price) * quantity
-                    log_trade('FILLED', 'SELL', actual_price, quantity, actual_price * quantity, 0, pnl)
-                except Exception as e:
-                    log_trade('SELL_ERROR', 'SELL', close, quantity, 0, 0, 0, str(e))
-
             position_open = False
             peak_price = 0.0
             clear_state()
@@ -583,36 +639,20 @@ def run_live_spot(symbol='BTCUSDT', interval='4h',
             resp = requests.get(url, params={'symbol': symbol, 'interval': interval,
                                              'limit': warmup_limit}, timeout=10)
             resp.raise_for_status()
-            data = resp.json()
-            df_new = pd.DataFrame(data, columns=[
-                'Open time', 'Open', 'High', 'Low', 'Close', 'Volume',
-                'Close time', 'Quote volume', 'Trades', 'Taker buy base',
-                'Taker buy quote', 'Ignore'
-            ])
-            for col in ['Open', 'High', 'Low', 'Close', 'Volume', 'Quote volume']:
-                df_new[col] = df_new[col].astype(float)
+            df_new = klines_to_closed_frame(resp.json())
 
             # Recalculate ATR and run strategy
             atr_arr_new = calculate_atr_from_df(df_new, atr_period)
-            core.reset()
-            for i in range(len(df_new)):
-                if not np.isnan(atr_arr_new[i]):
-                    core.update(
-                        df_new['High'].iloc[i], df_new['Low'].iloc[i],
-                        df_new['Close'].iloc[i], df_new['Quote volume'].iloc[i],
-                        atr_arr_new[i]
-                    )
+            signal = replay_and_get_signal(core, df_new, atr_arr_new)
 
             close = df_new['Close'].iloc[-1]
             high = df_new['High'].iloc[-1]
             low = df_new['Low'].iloc[-1]
-            volume = df_new['Quote volume'].iloc[-1]
             atr_val = atr_arr_new[-1]
 
             if np.isnan(atr_val) or atr_val <= 0:
                 return
 
-            signal = core.update(high, low, close, volume, atr_val)
             ts = datetime.now().strftime('%H:%M:%S')
 
             # Debug mode: force signal every candle
@@ -621,21 +661,11 @@ def run_live_spot(symbol='BTCUSDT', interval='4h',
 
             # ── Check stop loss on existing position ──
             if position_open and low <= stop_loss_price:
-                pnl = (stop_loss_price - entry_price) * quantity
-                log_trade('STOP_LOSS', 'SELL', stop_loss_price, quantity,
-                         stop_loss_price * quantity, stop_loss_price, pnl)
-
-                if not dry_run:
-                    try:
-                        cancel_all_orders(symbol, base_url)
-                        order = place_market_sell(symbol, quantity, step_size, base_url)
-                        actual_price = float(order.get('price', stop_loss_price))
-                        pnl = (actual_price - entry_price) * quantity
-                        log_trade('FILLED', 'SELL', actual_price, quantity,
-                                 actual_price * quantity, 0, pnl)
-                    except Exception as e:
-                        log_trade('SELL_ERROR', 'SELL', stop_loss_price, quantity, 0, 0, 0, str(e))
-
+                fill = close_position_market(stop_loss_price)
+                if fill is None:
+                    return  # still holding: keep state
+                pnl = (fill - entry_price) * quantity
+                log_trade('STOP_LOSS', 'SELL', fill, quantity, fill * quantity, stop_loss_price, pnl)
                 position_open = False
                 peak_price = 0.0
                 clear_state()
@@ -652,10 +682,12 @@ def run_live_spot(symbol='BTCUSDT', interval='4h',
                 notional = budget_usdt
                 qty = notional / entry_price if entry_price > 0 else 0
 
-                # Min notional check
+                # Exchange minimum notional: skip instead of silently spending more than the budget.
                 min_notional = filters.get('min_notional', 10) * 1.15
                 if notional < min_notional:
-                    qty = min_notional / entry_price
+                    log_trade('SKIP', 'BUY', entry_price, 0, 0, 0, 0,
+                              f'budget {notional:.2f} < min notional {min_notional:.2f}')
+                    return
 
                 # Step size
                 qty = float(floor_to_step(Decimal(str(qty)), step_size))
@@ -698,15 +730,16 @@ def run_live_spot(symbol='BTCUSDT', interval='4h',
                 position_open = True
                 last_signal_time = time.time()
 
-                # Persist state
-                save_state({
-                    'symbol': symbol,
-                    'entry_price': entry_price,
-                    'peak_price': peak_price,
-                    'stop_loss_price': stop_loss_price,
-                    'quantity': quantity,
-                    'entry_time': entry_time,
-                })
+                # Persist state (real positions only)
+                if not dry_run:
+                    save_state({
+                        'symbol': symbol,
+                        'entry_price': entry_price,
+                        'peak_price': peak_price,
+                        'stop_loss_price': stop_loss_price,
+                        'quantity': quantity,
+                        'entry_time': entry_time,
+                    })
 
         except Exception as e:
             print(f"  on_candle_close error: {e}")
@@ -732,16 +765,15 @@ def run_live_spot(symbol='BTCUSDT', interval='4h',
 
     if position_open and not dry_run:
         print(f"  Closing open position: LONG {quantity:.6f}")
-        try:
-            cancel_all_orders(symbol, base_url)
-            order = place_market_sell(symbol, quantity, step_size, base_url)
-            actual_price = float(order.get('price', 0))
-            pnl = (actual_price - entry_price) * quantity if actual_price > 0 else 0
-            log_trade('SHUTDOWN_SELL', 'SELL', actual_price, quantity, 0, 0, pnl, 'shutdown')
-        except Exception as e:
-            log_trade('SHUTDOWN_ERROR', 'SELL', 0, quantity, 0, 0, 0, str(e))
-
-    clear_state()
+        fill = close_position_market(entry_price)
+        if fill is not None:
+            log_trade('SHUTDOWN_SELL', 'SELL', fill, quantity, fill * quantity, 0,
+                      (fill - entry_price) * quantity, 'shutdown')
+            clear_state()
+        else:
+            print("  Could not close the position; state file kept so the next start recovers it.")
+    if dry_run:
+        clear_state()  # a simulated position must never be recovered as a real one
     if _log_file:
         _log_file.close()
     print("  Stopped.")
@@ -762,9 +794,17 @@ if __name__ == '__main__':
     parser.add_argument('--live', action='store_true', help='Enable real orders on mainnet')
     parser.add_argument('--testnet', action='store_true', help='Use testnet')
     parser.add_argument('--debug', action='store_true', help='Force trade every candle')
-    parser.add_argument('--dry-run', action='store_true', default=True)
+    parser.add_argument('--dry-run', action='store_true',
+                        help='never send orders (also with --testnet: testnet data, no orders)')
 
     args = parser.parse_args()
+    if args.live and args.testnet:
+        parser.error('--live and --testnet are mutually exclusive')
+    if args.debug and args.live:
+        parser.error('--debug forces trades and cannot be combined with --live')
+    # Modes: default = dry run; --testnet = orders on testnet; --live = orders on mainnet.
+    # --dry-run always wins.
+    dry_run = args.dry_run or not (args.live or args.testnet)
 
     run_live_spot(
         symbol=args.symbol,
@@ -776,7 +816,7 @@ if __name__ == '__main__':
         trailing_stop_pct=args.trailing_stop,
         min_volume_usdt=args.min_volume,
         budget_usdt=args.budget,
-        dry_run=not args.live and not args.testnet,
+        dry_run=dry_run,
         testnet=args.testnet,
         debug=args.debug,
     )
