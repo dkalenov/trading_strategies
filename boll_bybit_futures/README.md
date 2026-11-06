@@ -238,7 +238,7 @@ funded account:
 - **This backtests one pair's specific 18-month window.** Markets change
   regimes; nothing here validates forward performance.
 
-None of this means "the code is broken" - the mechanics check out (see
+None of this means "the code is broken", the mechanics check out (see
 above). It means: treat any backtest, walk-forward, or Monte Carlo output
 as one data point to interrogate, not a green light. If you do decide to
 run this live, start on testnet, then with real money only at a size you
