@@ -101,7 +101,7 @@ SELL条件: close < peak_price × (1 - trailing_stop_pct / 100)
 - ATR-based stop loss
 - Full stats: Sharpe, Sortino, Calmar, drawdown, win rate, profit factor
 
-### main.py — CLI:
+### main.py:
 
 - Backtest with any parameter combination
 - Monthly performance breakdown
