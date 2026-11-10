@@ -12,8 +12,8 @@ A breakout occurs when price moves above a defined resistance level with increas
 
 The bot combines two conditions for entry:
 
-1. **Price breakout**: `close > max(highs[-lookback:])` — price closes above the lookback-period high
-2. **Volume confirmation**: `volume >= avg_volume × volume_multiplier` — volume is significantly above average
+1. **Price breakout**: `close > max(highs[-lookback:])` - price closes above the lookback-period high
+2. **Volume confirmation**: `volume >= avg_volume × volume_multiplier` - volume is significantly above average
 
 Exit is managed by two mechanisms:
 
