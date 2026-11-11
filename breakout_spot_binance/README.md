@@ -59,8 +59,8 @@ SELL条件: close < peak_price × (1 - trailing_stop_pct / 100)
 
 | File | Description |
 |------|-------------|
-| `strategy.py` | BreakoutCore class — signal logic + trailing stop |
-| `live_spot.py` | Live bot — WebSocket (mainnet) / REST polling (testnet) |
+| `strategy.py` | BreakoutCore class - signal logic + trailing stop |
+| `live_spot.py` | Live bot - WebSocket (mainnet) / REST polling (testnet) |
 | `backtester.py` | Event-driven backtester with commission + slippage |
 | `main.py` | CLI: backtest, optimize, monthly analysis |
 | `config.py` | Config loader (config.ini + env vars) |
