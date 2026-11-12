@@ -52,7 +52,7 @@ SELL条件: close < peak_price × (1 - trailing_stop_pct / 100)
 | Multiplier | Effect |
 |------------|--------|
 | 1.5 | More signals, includes moderate volume spikes |
-| 2.0 | Default — balances sensitivity and noise |
+| 2.0 | Default - balances sensitivity and noise |
 | 2.5-3.0 | Only strong volume confirmations |
 
 ## Files
