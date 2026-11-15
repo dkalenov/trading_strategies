@@ -43,7 +43,7 @@ SELL条件: close < peak_price × (1 - trailing_stop_pct / 100)
 | Lookback | Use Case | Characteristics |
 |----------|----------|-----------------|
 | 10-15 | Aggressive | More signals, higher false breakout rate |
-| 20 | Balanced | Default — good signal quality |
+| 20 | Balanced | Default - good signal quality |
 | 25-30 | Conservative | Fewer signals, higher conviction |
 | 40+ | Swing trading | Very few signals, major breakouts only |
 
