@@ -73,7 +73,7 @@ SELL条件: close < peak_price × (1 - trailing_stop_pct / 100)
 
 ### strategy.py — Core Logic:
 
-- `BreakoutCore` class — stateful signal generation for live and backtest
+- `BreakoutCore` class - stateful signal generation for live and backtest
 - `breakout_signal()` — array-based function for batch backtesting
 - Lookback resistance calculation (highest high over N bars)
 - Volume spike detection (current vs average × multiplier)
