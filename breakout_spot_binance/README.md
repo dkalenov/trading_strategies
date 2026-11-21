@@ -87,7 +87,7 @@ SELL条件: close < peak_price × (1 - trailing_stop_pct / 100)
 - Market buy order with proper lot sizing and tick formatting
 - STOP_LOSS_LIMIT order placement
 - Position state persistence (`position_state.json`) - survives restarts
-- Graceful shutdown — cancels orders, closes position
+- Graceful shutdown - cancels orders, closes position
 - Debug mode — forces trade every candle for testing
 - Trade logging to CSV
 
