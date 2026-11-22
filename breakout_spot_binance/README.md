@@ -168,7 +168,7 @@ BTCUSDT 4h, 2023-01 to 2025-06, $10,000 initial capital:
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `lookback` | 20 | Bars to measure resistance — higher = fewer signals |
+| `lookback` | 20 | Bars to measure resistance - higher = fewer signals |
 | `volume_multiplier` | 2.0 | Volume must be ≥ this × average — higher = stricter |
 | `atr_period` | 14 | ATR lookback for stop loss calculation |
 | `stop_loss_multiplier` | 1.5 | Stop loss = entry - ATR × this value |
