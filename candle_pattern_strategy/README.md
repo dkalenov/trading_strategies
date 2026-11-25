@@ -6,12 +6,12 @@ Candlestick pattern recognition bot with ATR-based risk management for Bybit Fut
 
 ## How It Works
 
-- Detects 11 candlestick patterns: Engulfing, Hammer, Morning/Evening Star, Three White Soldiers/Black Crows, Piercing Line, Dark Cloud Cover, Harami Cross (Harami Cross is detected/labeled but is intentionally non-directional in the current code — see Pattern Weights below - so it never triggers a trade)
+- Detects 11 candlestick patterns: Engulfing, Hammer, Morning/Evening Star, Three White Soldiers/Black Crows, Piercing Line, Dark Cloud Cover, Harami Cross (Harami Cross is detected/labeled but is intentionally non-directional in the current code - see Pattern Weights below - so it never triggers a trade)
 - Patterns are scored by weighted strength (0.9–1.4) with optional volume boost
 - **BUY signal:** Bullish pattern detected (engulfing, hammer, morning star, etc.)
 - **SELL signal:** Bearish pattern detected (bearish engulfing, evening star, etc.)
 - ATR-based stop-loss and take-profit, enforced on the exchange via Bybit's trading-stop endpoint (see Architecture)
-- **Trend filter:** EMA-50/EMA-200 - only trade with the trend. Contributes far less to results than the pattern-strength and volatility filters - see the ablation table below.
+- **Trend filter:** EMA-50/EMA-200, only trade with the trend. See the ablation table below: without it every tested combination loses most of the account.
 
 ## Files
 
@@ -22,7 +22,7 @@ Candlestick pattern recognition bot with ATR-based risk management for Bybit Fut
 | `main.py` | Live trading bot (WebSocket + REST, Bybit Futures) |
 | `validate.py` | Out-of-sample / cross-timeframe robustness checks |
 | `Pattern_strategy.ipynb` | Research notebook (Colab) |
-| `ML_Trading_Bot.ipynb` | ML-based pattern recognition (exploratory — not used by main.py/backtest.py) |
+| `ML_Trading_Bot.ipynb` | ML-based pattern recognition (exploratory - not used by main.py/backtest.py) |
 | `requirements.txt` | Python dependencies |
 
 ## Quick Start
@@ -60,7 +60,7 @@ python main.py --symbol BTCUSDT --interval 1h --testnet --live --debug
 | `risk_pct` | 1% | Risk per trade |
 | `leverage` | 10x | Max leverage cap. Position size is risk-based (from `risk_pct`), so this cap rarely binds in practice - it doesn't meaningfully change backtest results whether set to 10x or 20x |
 | `commission` | 0.055% | Bybit standard (non-VIP) USDT-perpetual taker fee. All orders here are market orders (taker) |
-| `min_strength` | 1.3 | Min pattern strength to trade — **the single biggest driver of backtest performance**, see ablation table |
+| `min_strength` | 1.3 | Min pattern strength to trade - see the ablation table for its effect |
 | `ema_fast` | 50 | Fast EMA for trend filter (calculated with the standard recursive formula, `adjust=False`) |
 | `ema_slow` | 200 | Slow EMA for trend filter |
 | `min_atr_pct` | 0.3% | Min ATR % of price (volatility filter) |
@@ -68,11 +68,11 @@ python main.py --symbol BTCUSDT --interval 1h --testnet --live --debug
 ## Architecture
 
 ```
-WebSocket (kline)  ──→  Pattern Detection (11 patterns)
-                              ↓
+WebSocket (kline)  ->  Pattern Detection (11 patterns)
+                              v
                      Signal + Strength scoring
-                              ↓
-                     Market Order  ──→  Bybit trading-stop endpoint
+                              v
+                     Market Order  ->  Bybit trading-stop endpoint
                                        (SL + TP registered on the exchange
                                         immediately after entry fills)
 ```
@@ -109,105 +109,99 @@ account silently kept whatever leverage was last configured manually.
 
 ## Backtest Results
 
-BTCUSDT 1h (2024-01 to 2025-06, 13,000 candles). Numbers below use realistic costs:
-Bybit's standard 0.055% taker fee (not an optimistic 0.04%) and an approximate
-funding-rate cost (0.01%/8h - a rough estimate, not real historical funding data,
-since that wasn't fetchable in the environment this was checked in).
+BTCUSDT 1h (2024-01 to 2025-06, 13,000 candles). Costs: Bybit's standard 0.055% taker fee, 0.02% slippage
+per fill, and an approximate funding cost (0.01% per 8h, charged for each real funding settlement at
+00:00, 08:00 and 16:00 UTC that a position is open; this is a rough constant, not historical funding data).
+Entries are filled at the next bar's open. Reproduce with the commands in Quick Start.
 
 ### Without filters (baseline)
 
 | Metric | Value |
 |--------|-------|
 | Return | -99.0% |
-| Trades | 1,341 |
+| Trades | 1,331 |
 | Win Rate | 40.9% |
-| Max Drawdown | -99.0% |
 | Profit Factor | 0.48 |
 
-**Conclusion:** Pure candlestick patterns without filters are not profitable - SL/TP is very tight (0.75x ATR, ~1:1 R:R) in this config, so commissions and noise dominate. Engulfing patterns dominate raw signal counts but generate the most noise.
+Pure candlestick patterns with no filters are not profitable: the ATR stop and target are close to the
+noise level, so fees and slippage dominate.
 
-### With filters + "optimized" parameters
+### With filters (current defaults)
 
 | Metric | Value |
 |--------|-------|
-| Return | **+19.2%** |
+| Return | **+17.84%** |
 | Trades | 329 |
 | Win Rate | 39.2% |
 | Max Drawdown | -17.9% |
-| Sharpe Ratio | 0.65 |
+| Sharpe Ratio | 0.62 |
 | Profit Factor | 1.07 |
-| Est. funding cost | -$566 (already included above, rough estimate) |
+| Est. funding cost | -$655 (already included) |
 
-**Config:** SL=2.0x ATR, TP=4.0x ATR, EMA-50/200 trend filter, min_strength=1.3, min ATR 0.3%
+Config: SL 2.0x ATR, TP 4.0x ATR, EMA-50/200 trend filter, `min_strength=1.3`, `min_atr_pct=0.3`.
+Buy and hold BTC over the same period is not shown here; this strategy is in the market only part of
+the time, so compare it with holding before drawing conclusions.
 
-Note: an earlier version of this README reported +34.2% / Sharpe 1.02 / PF 1.13 for
-this same config. That number used a below-market 0.04% commission, no funding
-cost, and filled entries at the signal bar's own close instead of the next bar's
-open. +19.2% is the same backtest with realistic costs and entry timing - treat it
-as the more honest figure, and +34.2% as an upper bound that assumes frictionless,
-instant execution. (For the record: switching entry timing alone from same-bar-close
-to next-bar-open changed the result by well under 0.3 percentage points here - Bybit's
-1h klines have zero gap between a bar's close and the next bar's open, since it's a
-continuous 24/7 market. The fix matters for methodological correctness and for markets
-that DO gap, more than it mattered numerically in this specific dataset.)
+### Filter ablation
 
-### Filter ablation — isolating what actually drives the result
+Each filter is an independent switch (`--no-trend-filter` turns off only the EMA trend filter,
+`--min-strength 0` only the strength filter, `--min-atr-pct 0` only the ATR% filter). SL/TP fixed at 2.0/4.0 ATR:
 
-The previous README attributed the entire improvement (baseline → optimized) to the
-EMA trend filter. That comparison changed 4 things at once (SL/TP ratio, min_strength,
-min_atr_pct, AND the trend filter), so it couldn't actually isolate the trend
-filter's effect. Holding SL/TP fixed at 2.0/4.0 ATR and toggling one filter at a
-time:
+| Filters active | Return | Trades | Win Rate | Profit Factor |
+|---|---|---|---|---|
+| None (baseline) | -99.0% | 1,331 | 40.9% | 0.48 |
+| Trend only | -6.5% | 362 | 36.7% | 0.98 |
+| Strength only | -84.2% | 1,408 | 31.9% | 0.74 |
+| ATR% only | -95.9% | 2,756 | 30.1% | 0.70 |
+| Strength + ATR%, no trend | -79.0% | 1,359 | 32.4% | 0.78 |
+| Trend + strength | +11.8% | 338 | 38.8% | 1.05 |
+| Trend + ATR% | -3.7% | 355 | 36.9% | 0.99 |
+| All three (default) | +17.8% | 329 | 39.2% | 1.07 |
 
-| Config (SL=2.0/TP=4.0 ATR fixed) | Return | Trades |
-|---|---|---|
-| Only EMA trend filter | +6.9% | 360 |
-| Only min_strength=1.3 | +28.0% | 344 |
-| Only min_atr_pct=0.3% | +13.7% | 361 |
-| strength + ATR%, **no** trend filter | +34.1%\* | 335 |
-| All three together (current default) | +19.2% | 329 |
+**The EMA trend filter is essential in this test.** Without it every combination loses most of the
+account; with it the results are around break-even, and the strength and ATR% filters then add roughly
+10 to 20 percentage points on top. An earlier version of this README concluded the opposite ("the trend
+filter is not the main driver"). That table was wrong: `--no-trend-filter` did not actually turn the trend
+filter off whenever the strength or ATR% filter was active, so the "no trend" rows still had it on.
 
-\*Figure shown with the old 0.04% commission for direct comparison with the isolated
-single-filter rows above; with 0.055% + funding it lands close to the full-combo
-number.
+### Robustness check (`validate.py`)
 
-**The trend filter is not the main driver.** Adding it on top of strength+ATR%
-filters changes the result by well under 1 percentage point. `min_strength` (which
-functionally keeps mostly Three White Soldiers/Black Crows/Stars, since Engulfing
-only clears the 1.3 bar with a volume boost) and the volatility filter are doing
-almost all the work.
-
-### Out-of-sample / robustness check (`validate.py`)
-
-All parameters above were tuned and evaluated on the same single 18-month dataset -
-no train/test split, no walk-forward, no second symbol. Running the identical
-parameters on 30-minute BTCUSDT candles over almost the same period (a timeframe
-the parameters were never fit to):
+All parameters were chosen and evaluated on the same single 18-month dataset: no train/test split, no
+walk-forward, no second symbol.
 
 | Test | Return | Win Rate | PF |
 |---|---|---|---|
-| 1h (tuning dataset) | +19.2% | 39.2% | 1.07 |
-| 30m (same asset, ~same period) | **-37.8%** | 33.4% | 0.82 |
+| 1h, first half of the period | +11.7% | 39.5% | 1.10 |
+| 1h, second half of the period (about 2024-10 to 2025-06) | +5.8% | 39.0% | 1.04 |
+| 30m, 2024-09 to 2025-06 (same asset, a timeframe the parameters were not fit to) | **-38.7%** | 33.4% | 0.81 |
 
-A strategy with a real edge should degrade gracefully across a nearby timeframe on
-the same asset, not flip from profitable to sharply unprofitable. This is a strong
-signal that the current parameters are fitted to the specific 1h dataset rather
-than reflecting a robust edge. **Before risking real capital, at minimum re-run
-`validate.py`-style checks on a period that was not used to pick `sl_atr`/`tp_atr`/
-`min_strength`, and on a second symbol.**
+The 1h second half covers roughly the same months as the 30m run, so the comparison is fair in time:
+the same parameters that are slightly positive on 1h lose heavily on 30m. That is evidence the
+parameters are tied to this dataset and timeframe rather than a robust edge. Before risking real capital,
+test on a period and a symbol that were not used to choose `sl_atr`, `tp_atr` and `min_strength`.
 
-### Key Findings
+### Key findings
 
-1. **`min_strength` (pattern-quality filter) is the main driver**, not the trend filter — see ablation table
-2. **Wide TP (2:1 R:R)** - allows winners to run, compensates for lower win rate
-3. **Engulfing patterns are the noisiest** - dominant in raw signal counts, weakest edge
-4. **Realistic costs cut the return roughly in half** (+34.2% frictionless → +19.2% with real Bybit fees + approximate funding)
-5. **Same parameters lose money on 30m bars** - treat the strategy as unvalidated out-of-sample until tested on data/timeframes/symbols it wasn't tuned on
+1. The EMA trend filter is what separates a break-even system from one that loses almost everything here.
+2. Strength and ATR% filters improve a filtered system modestly; on their own they do not rescue it.
+3. Engulfing patterns dominate the raw signal counts and have the weakest edge.
+4. Realistic costs matter a lot: earlier versions quoted +34.2% with a 0.04% fee, no funding and same-bar
+   entries.
+5. The same parameters lose money on 30m bars, so treat the strategy as unvalidated out of sample.
+
+## Live bot behavior
+
+`main.py` acts on closed candles only (the candle the WebSocket confirmed). An opposite signal closes the
+position and reverses it, as in the backtest; a signal in the direction of the open position is ignored.
+Position size is risk-based and capped at balance x leverage. After entry the bot confirms the position on
+the exchange and sets the exchange-side SL/TP, retrying, and closes the position if it cannot attach them.
+An unreadable position or balance skips the candle instead of being treated as "no position". The live
+path has not been exercised against a real exchange in this repository.
 
 ## Known Limitations
 
-- **Entry timing:** the backtest now fills at the *next* bar's open following a signal bar's close (`next_bar_entry=True`, default), not the signal bar's own close — see the note under "With filters" above. `main.py`'s real execution (WebSocket confirm → REST poll → order) happens shortly after a candle closes, so it lines up with this convention; there is still some real network/processing latency backtest can't capture exactly.
-- **Funding rate is a rough constant estimate** (0.01%/8h), not real historical funding data. Actual BTCUSDT funding varies over time and tends to run positive during strong uptrends — which is exactly when this trend-following strategy is more likely to be long, a correlation that could make real funding costs worse than the flat estimate here.
+- **Entry timing:** the backtest fills at the *next* bar's open following a signal bar's close (`next_bar_entry=True`, default), not the signal bar's own close - see the note under "With filters" above. `main.py`'s real execution (WebSocket confirm → REST poll → order) happens shortly after a candle closes, so it lines up with this convention; there is still some real network/processing latency backtest can't capture exactly.
+- **Funding rate is a rough constant estimate** (0.01%/8h), not real historical funding data. Actual BTCUSDT funding varies over time and tends to run positive during strong uptrends - which is exactly when this trend-following strategy is more likely to be long, a correlation that could make real funding costs worse than the flat estimate here.
 - **No liquidation modeling.** Position sizing is risk-based (`risk_pct` of capital per trade via SL distance), which in practice keeps notional well under the leverage cap, so liquidation before SL is unlikely at the tested parameters - but it isn't explicitly checked.
 - **Single asset, single timeframe, single period were used to choose parameters and report results.** See the out-of-sample section above.
 - **No slippage differentiation for stop-outs.** Real stop-loss fills during fast moves/flash-crashes often slip more than the flat 0.02% assumed here for every exit.
