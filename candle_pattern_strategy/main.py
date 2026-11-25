@@ -63,15 +63,19 @@ def bybit_request(method, endpoint, params, base_url=TESTNET_BASE):
     return result.get('result', {})
 
 
+class ExchangeStateUnknown(RuntimeError):
+    """Exchange state (position, balance) could not be read. Never treat it as 'flat'."""
+
+
 def get_balance(base_url=TESTNET_BASE):
     try:
         result = bybit_request('GET', '/v5/account/wallet-balance', {'accountType': 'UNIFIED'}, base_url)
         for c in result.get('list', [{}])[0].get('coin', []):
             if c.get('coin') == 'USDT':
                 return float(c.get('equity', 0))
-    except Exception:
-        pass
-    return 0.0
+    except Exception as e:
+        raise ExchangeStateUnknown(f"balance unavailable: {e}") from e
+    raise ExchangeStateUnknown("no USDT balance in wallet response")
 
 
 def get_position(symbol, base_url=TESTNET_BASE):
@@ -85,16 +89,19 @@ def get_position(symbol, base_url=TESTNET_BASE):
                     'size': float(p.get('size', 0)),
                     'entry_price': float(p.get('avgPrice', 0)),
                 }
-    except Exception:
-        pass
+    except Exception as e:
+        raise ExchangeStateUnknown(f"position unavailable: {e}") from e
     return {'side': '', 'size': 0, 'entry_price': 0}
 
 
-def place_market_order(symbol, side, qty, base_url=TESTNET_BASE):
-    return bybit_request('POST', '/v5/order/create', {
+def place_market_order(symbol, side, qty, base_url=TESTNET_BASE, reduce_only=False):
+    params = {
         'category': 'linear', 'symbol': symbol, 'side': side,
         'orderType': 'Market', 'qty': str(qty),
-    }, base_url)
+    }
+    if reduce_only:
+        params['reduceOnly'] = True
+    return bybit_request('POST', '/v5/order/create', params, base_url)
 
 
 def cancel_all_orders(symbol, base_url=TESTNET_BASE):
@@ -138,6 +145,43 @@ def set_trading_stop(symbol, stop_loss, take_profit, base_url=TESTNET_BASE):
         'stopLoss': str(stop_loss), 'takeProfit': str(take_profit),
         'tpslMode': 'Full', 'positionIdx': 0,
     }, base_url)
+
+
+def enter_with_protection(symbol, side_entry, qty, stop_loss, take_profit, base_url=TESTNET_BASE,
+                          retries=3):
+    """Market entry, then confirm the fill and attach exchange-side SL/TP.
+
+    If the stop cannot be attached after several tries the position is closed
+    immediately: a position without a stop is not acceptable.
+    """
+    place_market_order(symbol, side_entry, qty, base_url)
+    filled = False
+    for _ in range(retries):
+        time.sleep(0.5)
+        try:
+            pos = get_position(symbol, base_url)
+        except ExchangeStateUnknown:
+            continue
+        if pos['size'] != 0:
+            filled = True
+            break
+    if not filled:
+        print("  Entry not confirmed on the exchange; no SL/TP placed. Check the account.")
+        return False
+    for attempt in range(retries):
+        try:
+            set_trading_stop(symbol, stop_loss, take_profit, base_url)
+            return True
+        except Exception as e:
+            print(f"  SL/TP attempt {attempt + 1} failed: {e}")
+            time.sleep(1)
+    side_close = 'Sell' if side_entry == 'Buy' else 'Buy'
+    print("  Could not attach SL/TP: closing the position.")
+    try:
+        place_market_order(symbol, side_close, qty, base_url, reduce_only=True)
+    except Exception as e:
+        print(f"  EMERGENCY CLOSE FAILED: {e}. Close the position manually.")
+    return False
 
 
 _instrument_cache = {}
@@ -243,7 +287,7 @@ class MarketDataWS:
                         ts = k.get('start', 0)
                         if ts != self._last_close_time:
                             self._last_close_time = ts
-                            self.on_candle_close()
+                            self.on_candle_close(int(ts))
 
                 def on_error(ws, error):
                     print(f"  WS error: {str(error)[:200]}")
@@ -302,8 +346,8 @@ def run_live(symbol='BTCUSDT', interval='1h', sl_atr=2.0, tp_atr=4.0,
         sys.exit(1)
 
     df = detect_patterns(df, atr_period=14, min_body_atr=0.15)
-    if use_trend_filter:
-        df = apply_filters(df, ema_fast=50, ema_slow=200, min_strength=min_strength, min_atr_pct=0.3)
+    df = apply_filters(df, ema_fast=50, ema_slow=200, min_strength=min_strength,
+                       min_atr_pct=0.3, use_trend_filter=use_trend_filter)
     last_atr = df['ATR'].iloc[-1] if 'ATR' in df.columns else 0
     print(f"  Warmup: {len(df)} bars, ATR={last_atr:.4f}")
 
@@ -312,15 +356,19 @@ def run_live(symbol='BTCUSDT', interval='1h', sl_atr=2.0, tp_atr=4.0,
     def on_tick(close):
         pass
 
-    def on_candle_close():
+    def on_candle_close(closed_start_ms=None):
         nonlocal last_atr_val
         try:
             df_new = fetch_klines(symbol, interval, warmup_limit, base_url)
+            # REST may already include the next, still-forming candle: keep only
+            # candles up to the one the WebSocket confirmed as closed.
+            if closed_start_ms is not None:
+                df_new = df_new[df_new.index <= pd.to_datetime(closed_start_ms, unit='ms', utc=True)]
             if len(df_new) >= 50:
                 df_new = detect_patterns(df_new, atr_period=14, min_body_atr=0.15)
-                if use_trend_filter:
-                    df_new = apply_filters(df_new, ema_fast=50, ema_slow=200,
-                                           min_strength=min_strength, min_atr_pct=0.3)
+                df_new = apply_filters(df_new, ema_fast=50, ema_slow=200,
+                                       min_strength=min_strength, min_atr_pct=0.3,
+                                       use_trend_filter=use_trend_filter)
                 last_atr_val[0] = df_new['ATR'].iloc[-1]
                 signal = df_new['Signal'].iloc[-1]
                 strength = df_new['Signal_strength'].iloc[-1]
@@ -330,7 +378,11 @@ def run_live(symbol='BTCUSDT', interval='1h', sl_atr=2.0, tp_atr=4.0,
                 # Debug mode: force trade every candle
                 if debug:
                     # Close existing position first
-                    pos = get_position(symbol, base_url)
+                    try:
+                        pos = get_position(symbol, base_url)
+                    except ExchangeStateUnknown as e:
+                        print(f"  [{ts}] [DEBUG] {e}; skipping")
+                        return
                     has_position = pos['size'] != 0
                     if has_position:
                         side_close = 'Sell' if pos['side'] == 'Buy' else 'Buy'
@@ -373,14 +425,29 @@ def run_live(symbol='BTCUSDT', interval='1h', sl_atr=2.0, tp_atr=4.0,
                 if signal != 0:
                     print(f"  [{ts}] SIGNAL: {pattern} ({'BUY' if signal == 1 else 'SELL'}) strength={strength:.1f}")
 
-                    pos = get_position(symbol, base_url)
+                    try:
+                        pos = get_position(symbol, base_url)
+                    except ExchangeStateUnknown as e:
+                        print(f"  [{ts}] {e}; skipping this candle (unknown state is not 'flat')")
+                        return
                     has_position = pos['size'] != 0
 
                     if has_position:
-                        side_close = 'Sell' if pos['side'] == 'Buy' else 'Buy'
+                        pos_is_long = pos['side'] == 'Buy'
+                        if (signal == 1) == pos_is_long:
+                            # Same-direction signal: the backtest keeps the position; so do we.
+                            print(f"  [{ts}] Signal in the direction of the open position: no action")
+                            return
+                        # Opposite signal: close and reverse (as the backtest does).
+                        side_close = 'Sell' if pos_is_long else 'Buy'
                         if not dry_run:
-                            cancel_all_orders(symbol, base_url)
-                            place_market_order(symbol, side_close, abs(pos['size']), base_url)
+                            try:
+                                cancel_all_orders(symbol, base_url)
+                                place_market_order(symbol, side_close, abs(pos['size']), base_url,
+                                                   reduce_only=True)
+                            except Exception as e:
+                                print(f"  [{ts}] Close error: {e}; not opening a new position")
+                                return
                         print(f"  [{ts}] Closed position")
 
                     atr = last_atr_val[0]
@@ -398,24 +465,23 @@ def run_live(symbol='BTCUSDT', interval='1h', sl_atr=2.0, tp_atr=4.0,
                     stop_loss = round_step(stop_loss, inst['tick_size'])
                     take_profit = round_step(take_profit, inst['tick_size'])
 
-                    balance = get_balance(base_url) if not dry_run else 100000
+                    try:
+                        balance = get_balance(base_url) if not dry_run else 100000
+                    except ExchangeStateUnknown as e:
+                        print(f"  [{ts}] {e}; skipping entry")
+                        return
                     sl_distance = sl_atr * atr
                     if sl_distance > 0:
                         risk_amount = balance * risk_pct
                         qty = risk_amount / sl_distance
+                        # Same cap as the backtest: notional <= balance * leverage.
+                        qty = min(qty, balance * leverage / entry_price)
                         qty = round_step(qty, inst['qty_step'])
                         if qty >= inst['min_qty']:
                             print(f"  [{ts}] {side_entry} @ {entry_price:.4f} qty={qty} "
                                   f"SL={stop_loss:.4f} TP={take_profit:.4f} ATR={atr:.4f}")
                             if not dry_run:
-                                try:
-                                    place_market_order(symbol, side_entry, qty, base_url)
-                                    # Register SL/TP on the exchange immediately after entry.
-                                    # This is the fix: previously nothing enforced SL/TP live —
-                                    # the position would only close on the next opposite signal.
-                                    set_trading_stop(symbol, stop_loss, take_profit, base_url)
-                                except Exception as e:
-                                    print(f"  [{ts}] Order/SL-TP error: {e}")
+                                enter_with_protection(symbol, side_entry, qty, stop_loss, take_profit, base_url)
                         else:
                             print(f"  [{ts}] Skipped: qty {qty} below min_qty {inst['min_qty']}")
         except Exception as e:
