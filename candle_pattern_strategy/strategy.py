@@ -234,7 +234,7 @@ def detect_patterns(df, atr_period=14, doji_th=0.15,
 
 
 def apply_filters(df, ema_fast=50, ema_slow=200, min_strength=0.0,
-                  min_atr_pct=0.0, patterns_only=None):
+                  min_atr_pct=0.0, patterns_only=None, use_trend_filter=True):
     """
     Apply trend and quality filters to signals.
 
@@ -245,6 +245,8 @@ def apply_filters(df, ema_fast=50, ema_slow=200, min_strength=0.0,
         min_strength: Min signal strength to keep
         min_atr_pct: Min ATR as % of price (filter low volatility)
         patterns_only: List of pattern names to keep (None = all)
+        use_trend_filter: apply the EMA trend filter. Each filter is independent:
+            turning the trend filter off leaves strength / ATR% / pattern filters active.
 
     Returns: filtered DataFrame
     """
@@ -262,8 +264,9 @@ def apply_filters(df, ema_fast=50, ema_slow=200, min_strength=0.0,
     bull_trend = (df['Close'] > df['EMA_fast']) & (df['EMA_fast'] > df['EMA_slow'])
     bear_trend = (df['Close'] < df['EMA_fast']) & (df['EMA_fast'] < df['EMA_slow'])
 
-    df.loc[(df['Signal'] == 1) & ~bull_trend, 'Signal'] = 0
-    df.loc[(df['Signal'] == -1) & ~bear_trend, 'Signal'] = 0
+    if use_trend_filter:
+        df.loc[(df['Signal'] == 1) & ~bull_trend, 'Signal'] = 0
+        df.loc[(df['Signal'] == -1) & ~bear_trend, 'Signal'] = 0
 
     # Min strength filter
     if min_strength > 0:
