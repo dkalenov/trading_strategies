@@ -105,7 +105,7 @@ account silently kept whatever leverage was last configured manually.
 | Dark Cloud Cover | 1.0 | Bear |
 | Hammer | 0.9 | Bull |
 | Inverted Hammer | 0.9 | Bear |
-| Harami Cross | 0.8 | *(none - never trades, see note above)* |
+| Harami Cross | 0.8 | *(none: never trades, see note above)* |
 
 ## Backtest Results
 
